@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
@@ -41,6 +42,8 @@ public class MainActivity extends AppCompatActivity implements
     public static String NAME_DATABASE = "FollowYou";
     public static final String Filter = "GpsIntentFilter";
     public static final String DetailsIntentTag = "WayId";
+    public static final String SharedTag = "SharedPreferencesRunner";
+    public static final String SharedRunnerIsStarted = "followIsStarted";
 
     private GoogleMap mMap;
     private boolean permissionGranted, runnerisStarted = false;
@@ -56,6 +59,8 @@ public class MainActivity extends AppCompatActivity implements
     private Intent locationService, historyIntent, detailsIntent;
     private BroadcastReceiver broadcastReceiver;
     private IntentFilter intentFilter = new IntentFilter(Filter);
+    private SharedPreferences sharedPreferences;
+    private SharedPreferences.Editor editor;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,6 +78,9 @@ public class MainActivity extends AppCompatActivity implements
                 .fallbackToDestructiveMigration().build();
         wayDao = database.wayDao();
         locDao = database.locDao();
+
+        sharedPreferences = getSharedPreferences(SharedTag, Context.MODE_PRIVATE);
+        editor = sharedPreferences.edit();
 
         initializeIntents();
 
@@ -193,8 +201,20 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     private void continueFollow(){
+        bStartStop.setText("Stop");
         startService(locationService);
         registerReceiver(broadcastReceiver, intentFilter);
+    }
+
+    private void saveState() {
+        editor.putBoolean(SharedRunnerIsStarted, runnerisStarted);
+        editor.commit();
+    }
+
+    private void loadState() {
+        runnerisStarted = sharedPreferences.getBoolean(SharedRunnerIsStarted, false);
+        Log.d(TAG, "loadState: " + runnerisStarted);
+        if (runnerisStarted) continueFollow();
     }
 
     private boolean checkisGPSenabled() {
@@ -225,11 +245,13 @@ public class MainActivity extends AppCompatActivity implements
     @Override
     protected void onPause() {
         super.onPause();
+        saveState();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+        loadState();
     }
 
 }
