@@ -4,6 +4,7 @@ import android.app.Service;
 import android.arch.persistence.room.Room;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -18,6 +19,9 @@ import com.example.bartek.followyou.Database.Loc;
 import com.example.bartek.followyou.Database.LocDao;
 import com.example.bartek.followyou.Database.Way;
 import com.example.bartek.followyou.Database.WayDao;
+
+import static com.example.bartek.followyou.MainActivity.SharedRunnerIsStarted;
+import static com.example.bartek.followyou.MainActivity.SharedTag;
 
 /**
  * Created by bartek on 30.03.2018.
@@ -34,6 +38,8 @@ public class LocationService extends Service {
     private Loc loc;
     private int wayId;
     private Intent intent;
+    private SharedPreferences sharedPreferences;
+    private SharedPreferences.Editor editor;
 
     private class LocationListener implements android.location.LocationListener
     {
@@ -115,6 +121,8 @@ public class LocationService extends Service {
     public void onCreate()
     {
         Log.e(TAG, "onCreate");
+        sharedPreferences = getSharedPreferences(SharedTag, Context.MODE_PRIVATE);
+        editor = sharedPreferences.edit();
         intent = new Intent().setAction(MainActivity.Filter);
         initializeLocationManager();
         AppDatabase database =
@@ -183,6 +191,8 @@ public class LocationService extends Service {
                 }
             }
         }
+        editor.putBoolean(SharedRunnerIsStarted, false);
+        editor.commit();
     }
 
 }

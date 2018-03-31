@@ -56,7 +56,6 @@ public class DetailsMapActivity extends Fragment {
         return fragmentMaps;
     }
 
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -64,7 +63,6 @@ public class DetailsMapActivity extends Fragment {
         Log.e(TAG, "Way id " + wayID);
 
     }
-
 
     @Nullable
     @Override
@@ -111,12 +109,10 @@ public class DetailsMapActivity extends Fragment {
                 });
             }
         });
-
         return view;
     }
 
     private void setGui() {
-
         int locListSize = locList.size();
         rectOptions = new PolylineOptions();
         LatLngBounds.Builder builder = new LatLngBounds.Builder();
@@ -134,7 +130,7 @@ public class DetailsMapActivity extends Fragment {
         mMap.moveCamera(cameraUpdate);
         mMap.addPolyline(rectOptions);
         Marker startMarker = mMap.addMarker(new MarkerOptions().position(new LatLng(locList.get(0).getLatitude(), locList.get(0).getLongitude())).title("Start"));
-        Marker endMarker = mMap.addMarker(new MarkerOptions().position(new LatLng(locList.get(locListSize-1).getLatitude(), locList.get(locListSize-1).getLongitude())).title("End"));
+        Marker endMarker = mMap.addMarker(new MarkerOptions().position(new LatLng(locList.get(locListSize - 1).getLatitude(), locList.get(locListSize - 1).getLongitude())).title("End"));
         startMarker.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN));
         startMarker.showInfoWindow();
     }
