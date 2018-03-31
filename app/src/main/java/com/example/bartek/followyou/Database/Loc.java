@@ -24,19 +24,21 @@ public class Loc {
     @ColumnInfo
     private int wayId;
 
-    @ColumnInfo(name = "location")
-    private Location location;
+    @ColumnInfo(name = "time")
+    private long time;
 
-    public Location getLocation() {
-        return location;
-    }
+    @ColumnInfo(name = "longitude")
+    private double longitude;
 
-    public void setLocation(Location location) {
-        this.location = location;
-    }
+    @ColumnInfo(name = "latitude")
+    private double latitude;
+
+    @ColumnInfo(name = "speed")
+    private double speed;
+
 
     public int getId() {
-        return id;
+        return this.id;
     }
 
     public void setId(int id) {
@@ -44,10 +46,42 @@ public class Loc {
     }
 
     public int getWayId() {
-        return wayId;
+        return this.wayId;
     }
 
     public void setWayId(int wayId) {
         this.wayId = wayId;
+    }
+
+    public long getTime() {
+        return time;
+    }
+
+    public void setTime(long time) {
+        this.time = time;
+    }
+
+    public double getLongitude() {
+        return longitude;
+    }
+
+    public void setLongitude(double longitude) {
+        this.longitude = longitude;
+    }
+
+    public double getLatitude() {
+        return latitude;
+    }
+
+    public void setLatitude(double latitude) {
+        this.latitude = latitude;
+    }
+
+    public double getSpeed() {
+        return speed;
+    }
+
+    public void setSpeed(double speed) {
+        this.speed = speed;
     }
 }

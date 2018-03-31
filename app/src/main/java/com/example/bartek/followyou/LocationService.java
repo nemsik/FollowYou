@@ -26,7 +26,7 @@ import com.example.bartek.followyou.Database.WayDao;
 public class LocationService extends Service {
     private static final String TAG = "BOOMBOOMTESTGPS";
     private LocationManager mLocationManager = null;
-    private static final int LOCATION_INTERVAL = 3000;
+    private static final int LOCATION_INTERVAL = 1000;
     private static final float LOCATION_DISTANCE = 10f;
     private WayDao wayDao;
     private LocDao locDao;
@@ -45,7 +45,7 @@ public class LocationService extends Service {
         }
 
         @Override
-        public void onLocationChanged(Location location)
+        public void onLocationChanged(final Location location)
         {
             Log.e(TAG, "onLocationChanged: " + location);
             mLastLocation.set(location);
@@ -59,13 +59,15 @@ public class LocationService extends Service {
 
                 @Override
                 protected Void doInBackground(Void... users) {
-                    
                     Log.d(TAG, "doInBackground: ");
                     way = wayDao.getWay();
                     wayId = way.getId();
                     loc = new Loc();
                     loc.setWayId(wayId);
-                    loc.setLocation(mLastLocation);
+                    loc.setLatitude(location.getLatitude());
+                    loc.setLongitude(location.getLongitude());
+                    loc.setSpeed(location.getSpeed());
+                    loc.setTime(location.getTime());
                     locDao.insert(loc);
                     return null;
                 }

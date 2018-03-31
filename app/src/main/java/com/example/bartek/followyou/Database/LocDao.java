@@ -26,8 +26,8 @@ public interface LocDao {
     List<Loc> getAllRepos();
 
     @Query("SELECT * FROM loc WHERE wayId=:wayId")
-    List<Loc> findRepositoriesForUser(final int wayId);
+    List<Loc> getLocsForWayID(int wayId);
 
-    @Query("SELECT * FROM loc WHERE id=(SELECT MAX(id) FROM loc)")
+    @Query("SELECT * FROM loc ORDER BY id DESC LIMIT 1")
     Loc getLoc();
 }

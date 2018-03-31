@@ -17,10 +17,10 @@ public interface WayDao {
     @Query("SELECT * FROM way")
     List<Way> getAll();
 
-    @Query("SELECT * FROM way WHERE id IN (:wayIds)")
-    List<Way> loadAllByIds(int[] wayIds);
+//    @Query("SELECT * FROM way WHERE id IN (:wayIds)")
+//    List<Way> loadAllByIds(int[] wayIds);
 
-    @Query("SELECT * FROM way WHERE id IN (:wayId)")
+    @Query("SELECT * FROM way WHERE id = :wayId")
     Way getById(int wayId);
 
     @Insert
@@ -35,6 +35,6 @@ public interface WayDao {
     @Update
     void update(Way user);
 
-    @Query("SELECT * FROM way WHERE id=(SELECT MAX(id) FROM way)")
+    @Query("SELECT * FROM way ORDER BY id DESC LIMIT 1")
     Way getWay();
 }

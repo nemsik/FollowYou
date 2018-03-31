@@ -48,6 +48,8 @@ public class MainActivity extends AppCompatActivity implements
     private List<Loc> locList;
     private List<Way> wayList;
     private int id;
+    private Way way;
+    private Loc loc;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -104,8 +106,8 @@ public class MainActivity extends AppCompatActivity implements
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 200);
             permissionGranted = ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                     == PackageManager.PERMISSION_GRANTED;
-            if (!mMap.isMyLocationEnabled() && permissionGranted) mMap.setMyLocationEnabled(true);
         }
+        if (!mMap.isMyLocationEnabled() && permissionGranted) mMap.setMyLocationEnabled(true);
         return permissionGranted;
     }
 
@@ -145,10 +147,19 @@ public class MainActivity extends AppCompatActivity implements
             protected Void doInBackground(Void... voids) {
                 wayList = wayDao.getAll();
                 int size = wayList.size();
-                locList = locDao.findRepositoriesForUser(size);
-                //for(int i=0 ;i<locList.size(); i++){
-                    //Log.d(TAG, locList.get(i).getLocation().toString());
-                //}
+                locList = locDao.getLocsForWayID(size);
+                for(int i=0; i<wayList.size(); i++){
+                    way = wayList.get(i);
+                    Log.e(TAG, "Waylist id: " + way.getId());
+                    for(int j=0; j<locList.size(); j++){
+                        loc = locList.get(j);
+                        Log.d(TAG, "loc id: " + loc.getId());
+                        Log.d(TAG, "loc lat: " + loc.getLatitude());
+                        Log.d(TAG, "loc long: " + loc.getLongitude());
+                        Log.d(TAG, "loc time: " + loc.getTime());
+                        Log.d(TAG, "loc speed: " + loc.getSpeed());
+                    }
+                }
                 return null;
             }
 
@@ -165,51 +176,51 @@ public class MainActivity extends AppCompatActivity implements
 
     }
 
-    private class Test extends AsyncTask<Void, Void, Void>{
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-            try {
-                wayList.clear();
-            }catch (Exception e){e.getMessage();}
-        }
-
-        @Override
-        protected Void doInBackground(Void... voids) {
-            wayList.clear();
-            wayList = wayDao.getAll();
-
-            for (int i = 0; i < wayList.size(); i++) {
-                id = wayList.get(i).getId();
-                Log.e("Way id: ", id + "");
-
-                try {
-                    locList = locDao.findRepositoriesForUser(id);
-                }catch (Exception e){
-                    Log.e(TAG, e.toString());
-                }
-
-                for (int j = 0; j < locList.size(); j++) {
-                    Log.d("loc id: ", locList.get(j).getId() + "");
-                    try {
-                        Log.d("loc location: ", locList.get(j).getLocation().toString());
-                    }catch (Exception e){
-                        Log.d(TAG, "doInBackground: " + e.getMessage());
-                    }
-                }
-                locList.clear();
-
-            }
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(Void aVoid) {
-            super.onPostExecute(aVoid);
-            Log.d(TAG, "onPostExecute: ");
-        }
-    }
+//    private class Test extends AsyncTask<Void, Void, Void>{
+//
+//        @Override
+//        protected void onPreExecute() {
+//            super.onPreExecute();
+//            try {
+//                wayList.clear();
+//            }catch (Exception e){e.getMessage();}
+//        }
+//
+//        @Override
+//        protected Void doInBackground(Void... voids) {
+//            wayList.clear();
+//            wayList = wayDao.getAll();
+//
+//            for (int i = 0; i < wayList.size(); i++) {
+//                id = wayList.get(i).getId();
+//                Log.e("Way id: ", id + "");
+//
+//                try {
+//                    locList = locDao.findRepositoriesForUser(id);
+//                }catch (Exception e){
+//                    Log.e(TAG, e.toString());
+//                }
+//
+//                for (int j = 0; j < locList.size(); j++) {
+//                    Log.d("loc id: ", locList.get(j).getId() + "");
+//                    try {
+//                        Log.d("loc location: ", locList.get(j).getLocation().toString());
+//                    }catch (Exception e){
+//                        Log.d(TAG, "doInBackground: " + e.getMessage());
+//                    }
+//                }
+//                locList.clear();
+//
+//            }
+//            return null;
+//        }
+//
+//        @Override
+//        protected void onPostExecute(Void aVoid) {
+//            super.onPostExecute(aVoid);
+//            Log.d(TAG, "onPostExecute: ");
+//        }
+//    }
 
     @Override
     protected void onPause() {
