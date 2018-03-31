@@ -55,7 +55,7 @@ public class DetailsActivity extends AppCompatActivity {
                 case 0:
                     return DetailsInfoActivity.newInstance(wayId);
                 case 1:
-                    return DetailsInfoActivity.newInstance(wayId);
+                    return DetailsMapActivity.newInstance(wayId);
                 default: return null;
             }
         }
