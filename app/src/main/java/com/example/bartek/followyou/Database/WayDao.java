@@ -36,5 +36,5 @@ public interface WayDao {
     void update(Way user);
 
     @Query("SELECT * FROM way ORDER BY id DESC LIMIT 1")
-    Way getWay();
+    Way getLastWay();
 }

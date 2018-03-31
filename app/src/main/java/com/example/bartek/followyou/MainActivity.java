@@ -1,9 +1,13 @@
 package com.example.bartek.followyou;
 
 import android.Manifest;
+import android.app.AlertDialog;
 import android.arch.persistence.room.Room;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
@@ -22,11 +26,10 @@ import com.example.bartek.followyou.Database.Loc;
 import com.example.bartek.followyou.Database.LocDao;
 import com.example.bartek.followyou.Database.Way;
 import com.example.bartek.followyou.Database.WayDao;
+import com.example.bartek.followyou.DetailActivities.DetailsActivity;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
-
-import java.util.List;
 
 
 public class MainActivity extends AppCompatActivity implements
@@ -36,6 +39,8 @@ public class MainActivity extends AppCompatActivity implements
 
     public static String TAG = "MainActivity";
     public static String NAME_DATABASE = "FollowYou";
+    public static final String Filter = "GpsIntentFilter";
+    public static final String DetailsIntentTag = "WayId";
 
     private GoogleMap mMap;
     private boolean permissionGranted, runnerisStarted = false;
@@ -45,58 +50,43 @@ public class MainActivity extends AppCompatActivity implements
     private AppDatabase database;
     private WayDao wayDao;
     private LocDao locDao;
-    private List<Loc> locList;
-    private List<Way> wayList;
-    private int id;
     private Way way;
     private Loc loc;
+    private LocationManager locationManager;
+    private Intent locationService, historyIntent, detailsIntent;
+    private BroadcastReceiver broadcastReceiver;
+    private IntentFilter intentFilter = new IntentFilter(Filter);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        bStartStop = (Button) findViewById(R.id.buttonStartStop);
-        bHistory = (Button) findViewById(R.id.buttonHistory);
         context = this;
 
-        database = Room.databaseBuilder(getApplicationContext(), AppDatabase.class, NAME_DATABASE)
-                        .fallbackToDestructiveMigration().build();
+        bStartStop = (Button) findViewById(R.id.buttonStartStop);
+        bStartStop.setOnClickListener(new bStartStopClick());
+        bHistory = (Button) findViewById(R.id.buttonHistory);
 
+
+        checkPermissions();
+        database = Room.databaseBuilder(getApplicationContext(), AppDatabase.class, NAME_DATABASE)
+                .fallbackToDestructiveMigration().build();
         wayDao = database.wayDao();
         locDao = database.locDao();
+
+        initializeIntents();
 
 
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.fragment);
         mapFragment.getMapAsync(this);
 
-        bStartStop.setOnClickListener(new View.OnClickListener() {
+        broadcastReceiver = new BroadcastReceiver() {
             @Override
-            public void onClick(View view) {
-                new AsyncTask<Void, Void, Void>(){
-                    @Override
-                    protected Void doInBackground(Void... voids) {
-                        Way way = new Way();
-                        wayDao.insert(way);
-                        return null;
-                    }
-
-                    @Override
-                    protected void onPostExecute(Void aVoid) {
-                        startService(new Intent(context, LocationService.class));
-                    }
-                }.execute();
+            public void onReceive(Context context, Intent intent) {
+                Log.d(TAG, "onReceive: ");
             }
-        });
-
-        bHistory.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                TestDataBase();
-            }
-        });
-
+        };
     }
 
     private boolean checkPermissions() {
@@ -107,7 +97,6 @@ public class MainActivity extends AppCompatActivity implements
             permissionGranted = ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                     == PackageManager.PERMISSION_GRANTED;
         }
-        if (!mMap.isMyLocationEnabled() && permissionGranted) mMap.setMyLocationEnabled(true);
         return permissionGranted;
     }
 
@@ -125,102 +114,113 @@ public class MainActivity extends AppCompatActivity implements
     public void onMapReady(GoogleMap googleMap) {
 
         mMap = googleMap;
+        if (checkPermissions() == true) mMap.setMyLocationEnabled(true);
         mMap.setOnMapLoadedCallback(new GoogleMap.OnMapLoadedCallback() {
             @Override
             public void onMapLoaded() {
-                checkPermissions();
             }
         });
-
     }
 
-    private void TestDataBase() {
+    private void initializeIntents(){
+        locationService = new Intent(this, LocationService.class);
+        //historyIntent = new Intent(this, HistoryActivity.class);
+        detailsIntent = new Intent(this, DetailsActivity.class);
+    }
 
+    private class bStartStopClick implements View.OnClickListener {
+        @Override
+        public void onClick(View view) {
+            if (!runnerisStarted) {
+                if(!checkisGPSenabled()) buildAlertMessageNoGps();
+                else startFollow();
+            } else stopFollow();
+        }
+    }
+
+    private void startFollow(){
+        if (!checkPermissions()) return;
         new AsyncTask<Void, Void, Void>(){
             @Override
             protected void onPreExecute() {
-                super.onPreExecute();
-                Log.e(TAG, "onPreExecute: ");
+                runnerisStarted = true;
+                bStartStop.setText("Stop");
             }
 
             @Override
             protected Void doInBackground(Void... voids) {
-                wayList = wayDao.getAll();
-                int size = wayList.size();
-                locList = locDao.getLocsForWayID(size);
-                for(int i=0; i<wayList.size(); i++){
-                    way = wayList.get(i);
-                    Log.e(TAG, "Waylist id: " + way.getId());
-                    for(int j=0; j<locList.size(); j++){
-                        loc = locList.get(j);
-                        Log.d(TAG, "loc id: " + loc.getId());
-                        Log.d(TAG, "loc lat: " + loc.getLatitude());
-                        Log.d(TAG, "loc long: " + loc.getLongitude());
-                        Log.d(TAG, "loc time: " + loc.getTime());
-                        Log.d(TAG, "loc speed: " + loc.getSpeed());
-                    }
-                }
+                way = new Way();
+                wayDao.insert(way);
+                startService(locationService);
+                registerReceiver(broadcastReceiver, intentFilter);
                 return null;
+            }
+        }.execute();
+    }
+
+    private void stopFollow(){
+        bStartStop.setText("Start");
+        runnerisStarted = false;
+        mMap.clear();
+        try {
+            unregisterReceiver(broadcastReceiver);
+        } catch (Exception e) {
+            Log.i(TAG, "can't unregister receiver");
+        }
+        try {
+            stopService(locationService);
+        } catch (Exception e) {
+            Log.i(TAG, "can't stop gpsService");
+        }
+        try {
+            //handler.removeCallbacks(runnable);
+        } catch (Exception e) {
+            Log.i(TAG, "can't remove callbacks");
+        }
+        new AsyncTask<Void, Void, Way>(){
+            @Override
+            protected Way doInBackground(Void... voids) {
+                way = wayDao.getLastWay();
+                return way;
             }
 
             @Override
-            protected void onPostExecute(Void aVoid) {
-                super.onPostExecute(aVoid);
-                Log.e(TAG, "locList size: "+locList.size());
+            protected void onPostExecute(Way way) {
+                detailsIntent.putExtra(DetailsIntentTag, way.getId());
+                startActivity(detailsIntent);
             }
         }.execute();
-
-
-        //Test test = new Test();
-        //test.execute();
-
     }
 
-//    private class Test extends AsyncTask<Void, Void, Void>{
-//
-//        @Override
-//        protected void onPreExecute() {
-//            super.onPreExecute();
-//            try {
-//                wayList.clear();
-//            }catch (Exception e){e.getMessage();}
-//        }
-//
-//        @Override
-//        protected Void doInBackground(Void... voids) {
-//            wayList.clear();
-//            wayList = wayDao.getAll();
-//
-//            for (int i = 0; i < wayList.size(); i++) {
-//                id = wayList.get(i).getId();
-//                Log.e("Way id: ", id + "");
-//
-//                try {
-//                    locList = locDao.findRepositoriesForUser(id);
-//                }catch (Exception e){
-//                    Log.e(TAG, e.toString());
-//                }
-//
-//                for (int j = 0; j < locList.size(); j++) {
-//                    Log.d("loc id: ", locList.get(j).getId() + "");
-//                    try {
-//                        Log.d("loc location: ", locList.get(j).getLocation().toString());
-//                    }catch (Exception e){
-//                        Log.d(TAG, "doInBackground: " + e.getMessage());
-//                    }
-//                }
-//                locList.clear();
-//
-//            }
-//            return null;
-//        }
-//
-//        @Override
-//        protected void onPostExecute(Void aVoid) {
-//            super.onPostExecute(aVoid);
-//            Log.d(TAG, "onPostExecute: ");
-//        }
-//    }
+    private void continueFollow(){
+        startService(locationService);
+        registerReceiver(broadcastReceiver, intentFilter);
+    }
+
+    private boolean checkisGPSenabled() {
+        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) return true;
+        return false;
+    }
+
+    private void buildAlertMessageNoGps() {
+        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage("Your GPS seems to be disabled, do you want to enable it?")
+                .setCancelable(false)
+                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                    public void onClick(@SuppressWarnings("unused") final DialogInterface dialog, @SuppressWarnings("unused") final int id) {
+                        startActivity(new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS));
+                    }
+                })
+                .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                    public void onClick(final DialogInterface dialog, @SuppressWarnings("unused") final int id) {
+                        dialog.cancel();
+                    }
+                });
+        final AlertDialog alert = builder.create();
+        alert.show();
+    }
+
 
     @Override
     protected void onPause() {
@@ -231,6 +231,5 @@ public class MainActivity extends AppCompatActivity implements
     protected void onResume() {
         super.onResume();
     }
-
 
 }

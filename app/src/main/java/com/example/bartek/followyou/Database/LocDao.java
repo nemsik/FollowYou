@@ -29,5 +29,5 @@ public interface LocDao {
     List<Loc> getLocsForWayID(int wayId);
 
     @Query("SELECT * FROM loc ORDER BY id DESC LIMIT 1")
-    Loc getLoc();
+    Loc getLastLoc();
 }

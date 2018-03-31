@@ -33,6 +33,7 @@ public class LocationService extends Service {
     private Way way;
     private Loc loc;
     private int wayId;
+    private Intent intent;
 
     private class LocationListener implements android.location.LocationListener
     {
@@ -52,17 +53,8 @@ public class LocationService extends Service {
 
             new AsyncTask<Void, Void, Void>(){
                 @Override
-                protected void onPreExecute() {
-                    super.onPreExecute();
-                    Log.d(TAG, "onPreExecute: ");
-                }
-
-                @Override
                 protected Void doInBackground(Void... users) {
                     Log.d(TAG, "doInBackground: ");
-                    way = wayDao.getWay();
-                    wayId = way.getId();
-                    loc = new Loc();
                     loc.setWayId(wayId);
                     loc.setLatitude(location.getLatitude());
                     loc.setLongitude(location.getLongitude());
@@ -75,6 +67,7 @@ public class LocationService extends Service {
                 @Override
                 protected void onPostExecute(Void aVoid) {
                     Log.d(TAG, "onPostExecute: ");
+                    sendBroadcast(intent);
                 }
             }.execute();
 
@@ -122,7 +115,33 @@ public class LocationService extends Service {
     public void onCreate()
     {
         Log.e(TAG, "onCreate");
+        intent = new Intent().setAction(MainActivity.Filter);
         initializeLocationManager();
+        AppDatabase database =
+                Room.databaseBuilder(getApplicationContext(), AppDatabase.class, MainActivity.NAME_DATABASE)
+                        .fallbackToDestructiveMigration().build();
+
+        wayDao = database.wayDao();
+        locDao = database.locDao();
+        loc = new Loc();
+        new AsyncTask<Void, Void, Void>(){
+            @Override
+            protected Void doInBackground(Void... voids) {
+                way = wayDao.getLastWay();
+                return null;
+            }
+
+            @Override
+            protected void onPostExecute(Void aVoid) {
+                super.onPostExecute(aVoid);
+                wayId = way.getId();
+                requestUpdateLocation();
+            }
+        }.execute();
+
+    }
+
+    private void requestUpdateLocation(){
         try {
             mLocationManager.requestLocationUpdates(
                     LocationManager.NETWORK_PROVIDER, LOCATION_INTERVAL, LOCATION_DISTANCE,
@@ -141,14 +160,13 @@ public class LocationService extends Service {
         } catch (IllegalArgumentException ex) {
             Log.d(TAG, "gps provider does not exist " + ex.getMessage());
         }
+    }
 
-        AppDatabase database =
-                Room.databaseBuilder(getApplicationContext(), AppDatabase.class, MainActivity.NAME_DATABASE)
-                        .fallbackToDestructiveMigration().allowMainThreadQueries().build();
-
-        wayDao = database.wayDao();
-        locDao = database.locDao();
-
+    private void initializeLocationManager() {
+        Log.e(TAG, "initializeLocationManager");
+        if (mLocationManager == null) {
+            mLocationManager = (LocationManager) getApplicationContext().getSystemService(Context.LOCATION_SERVICE);
+        }
     }
 
     @Override
@@ -167,10 +185,4 @@ public class LocationService extends Service {
         }
     }
 
-    private void initializeLocationManager() {
-        Log.e(TAG, "initializeLocationManager");
-        if (mLocationManager == null) {
-            mLocationManager = (LocationManager) getApplicationContext().getSystemService(Context.LOCATION_SERVICE);
-        }
-    }
 }

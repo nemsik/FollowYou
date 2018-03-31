@@ -39,6 +39,8 @@
             android:name=".LocationService"
             android:process=":my_service" />
 
+        <activity android:name=".DetailActivities.DetailsActivity"></activity>
+
     </application>
 
 </manifest>
