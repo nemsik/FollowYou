@@ -30,4 +30,7 @@ public interface LocDao {
 
     @Query("SELECT * FROM loc ORDER BY id DESC LIMIT 1")
     Loc getLastLoc();
+
+    @Query("SELECT * FROM loc WHERE wayId=:wayId LIMIT 1")
+    Loc getFirstLocById(int wayId);
 }

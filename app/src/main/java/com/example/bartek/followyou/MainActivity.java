@@ -13,6 +13,7 @@ import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.AsyncTask;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -31,6 +32,10 @@ import com.example.bartek.followyou.DetailActivities.DetailsActivity;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+
+import java.util.Calendar;
+
+import static com.example.bartek.followyou.DetailActivities.DetailsInfoActivity.radius_of_earth;
 
 
 public class MainActivity extends AppCompatActivity implements
@@ -54,6 +59,7 @@ public class MainActivity extends AppCompatActivity implements
     private WayDao wayDao;
     private LocDao locDao;
     private Way way;
+    private int wayID;
     private Loc loc;
     private LocationManager locationManager;
     private Intent locationService, historyIntent, detailsIntent;
@@ -61,6 +67,9 @@ public class MainActivity extends AppCompatActivity implements
     private IntentFilter intentFilter = new IntentFilter(Filter);
     private SharedPreferences sharedPreferences;
     private SharedPreferences.Editor editor;
+    private Handler handler = new Handler();
+    private long startTime, difftime;
+    private double spped, avgspeed, distance, lat1, lat2, lon1, lon2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,6 +80,10 @@ public class MainActivity extends AppCompatActivity implements
         bStartStop = (Button) findViewById(R.id.buttonStartStop);
         bStartStop.setOnClickListener(new bStartStopClick());
         bHistory = (Button) findViewById(R.id.buttonHistory);
+        textViewSpeed = (TextView) findViewById(R.id.textViewSpeed);
+        textViewTime = (TextView) findViewById(R.id.textViewTime);
+        textViewDistance = (TextView) findViewById(R.id.textViewDistance);
+        textViewAvgSpeed = (TextView) findViewById(R.id.textViewAvgSpeed);
 
 
         checkPermissions();
@@ -93,6 +106,30 @@ public class MainActivity extends AppCompatActivity implements
             @Override
             public void onReceive(Context context, Intent intent) {
                 Log.d(TAG, "onReceive: ");
+                new AsyncTask<Void, Void, Void>() {
+                    @Override
+                    protected Void doInBackground(Void... voids) {
+                        spped =  locDao.getLastLoc().getSpeed();
+                        spped *= 3.6;
+                        lat2 = locDao.getLastLoc().getLatitude();
+                        lon2 = locDao.getLastLoc().getLongitude();
+                        if(lat1 != 0){
+                            distance += haversine(lat1, lon1, lat2, lon2);
+                        }
+                        lat1 = lat2;
+                        lon1 = lon2;
+                        difftime = locDao.getLastLoc().getTime() - locDao.getFirstLocById(wayID).getTime();
+                        avgspeed = ((distance * 1000) / (difftime/1000)) * 3.6;
+                        return null;
+                    }
+
+                    @Override
+                    protected void onPostExecute(Void aVoid) {
+                        textViewSpeed.setText(String.format("%.2f", spped ) + " km/h");
+                        textViewDistance.setText(String.format("%.2f", distance) + " km");
+                        textViewAvgSpeed.setText(String.format("%.2f", avgspeed) + " km/h");
+                    }
+                }.execute();
             }
         };
     }
@@ -130,7 +167,7 @@ public class MainActivity extends AppCompatActivity implements
         });
     }
 
-    private void initializeIntents(){
+    private void initializeIntents() {
         locationService = new Intent(this, LocationService.class);
         //historyIntent = new Intent(this, HistoryActivity.class);
         detailsIntent = new Intent(this, DetailsActivity.class);
@@ -140,15 +177,15 @@ public class MainActivity extends AppCompatActivity implements
         @Override
         public void onClick(View view) {
             if (!runnerisStarted) {
-                if(!checkisGPSenabled()) buildAlertMessageNoGps();
+                if (!checkisGPSenabled()) buildAlertMessageNoGps();
                 else startFollow();
             } else stopFollow();
         }
     }
 
-    private void startFollow(){
+    private void startFollow() {
         if (!checkPermissions()) return;
-        new AsyncTask<Void, Void, Void>(){
+        new AsyncTask<Void, Void, Void>() {
             @Override
             protected void onPreExecute() {
                 runnerisStarted = true;
@@ -159,14 +196,23 @@ public class MainActivity extends AppCompatActivity implements
             protected Void doInBackground(Void... voids) {
                 way = new Way();
                 wayDao.insert(way);
+                way = wayDao.getLastWay();
+                wayID = way.getId();
                 startService(locationService);
-                registerReceiver(broadcastReceiver, intentFilter);
                 return null;
+            }
+
+            @Override
+            protected void onPostExecute(Void aVoid) {
+                super.onPostExecute(aVoid);
+                registerReceiver(broadcastReceiver, intentFilter);
+                startTime = Calendar.getInstance().getTimeInMillis();
+                handler.postDelayed(runnable, 1000);
             }
         }.execute();
     }
 
-    private void stopFollow(){
+    private void stopFollow() {
         bStartStop.setText("Start");
         runnerisStarted = false;
         mMap.clear();
@@ -181,30 +227,61 @@ public class MainActivity extends AppCompatActivity implements
             Log.i(TAG, "can't stop gpsService");
         }
         try {
-            //handler.removeCallbacks(runnable);
+            handler.removeCallbacks(runnable);
         } catch (Exception e) {
             Log.i(TAG, "can't remove callbacks");
         }
-        new AsyncTask<Void, Void, Way>(){
+        new AsyncTask<Void, Void, Way>() {
             @Override
             protected Way doInBackground(Void... voids) {
                 way = wayDao.getLastWay();
+                wayID = way.getId();
                 return way;
             }
 
             @Override
             protected void onPostExecute(Way way) {
-                detailsIntent.putExtra(DetailsIntentTag, way.getId());
+                detailsIntent.putExtra(DetailsIntentTag, wayID);
                 startActivity(detailsIntent);
             }
         }.execute();
     }
 
-    private void continueFollow(){
+    private void continueFollow() {
         bStartStop.setText("Stop");
         startService(locationService);
         registerReceiver(broadcastReceiver, intentFilter);
+        new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected Void doInBackground(Void... voids) {
+                way = wayDao.getLastWay();
+                wayID = way.getId();
+                startTime = locDao.getFirstLocById(wayID).getTime();
+                return null;
+            }
+
+            @Override
+            protected void onPostExecute(Void aVoid) {
+                handler.postDelayed(runnable, 1000);
+            }
+        }.execute();
     }
+
+    private Runnable runnable = new Runnable() {
+        @Override
+        public void run() {
+            long milisecondTime = Calendar.getInstance().getTimeInMillis() - startTime;
+            int seconds = (int) (milisecondTime / 1000);
+            Log.d(TAG, "run: " + milisecondTime);
+            int minutes = seconds / 60;
+            int hours = minutes / 60;
+            seconds %= 60;
+            minutes %= 60;
+            hours %= 60;
+            textViewTime.setText(String.format("%02d", hours) + ":" + String.format("%02d", minutes) + ":" + String.format("%02d", seconds));
+            handler.postDelayed(this, 1000);
+        }
+    };
 
     private void saveState() {
         editor.putBoolean(SharedRunnerIsStarted, runnerisStarted);
@@ -241,17 +318,58 @@ public class MainActivity extends AppCompatActivity implements
         alert.show();
     }
 
+    private double haversine(double lat1, double lon1, double lat2, double lon2) {
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLon = Math.toRadians(lon2 - lon1);
+        lat1 = Math.toRadians(lat1);
+        lat2 = Math.toRadians(lat2);
+
+        double a = Math.pow(Math.sin(dLat / 2), 2) + Math.pow(Math.sin(dLon / 2), 2) * Math.cos(lat1) * Math.cos(lat2);
+        double c = 2 * Math.asin(Math.sqrt(a));
+        return radius_of_earth * c;
+    }
+
 
     @Override
     protected void onPause() {
         super.onPause();
+        Log.i(TAG, "onPause: ");
+        try {
+            unregisterReceiver(broadcastReceiver);
+        } catch (Exception e) {
+            Log.d(TAG, "can't unregister receiver");
+        }
+        try {
+            handler.removeCallbacks(runnable);
+        } catch (Exception e) {
+            Log.d(TAG, "can't remove callbacks");
+        }
         saveState();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+        Log.d(TAG, "onResume: ");
         loadState();
     }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        Log.i(TAG, "onDestroy: ");
+        try {
+            unregisterReceiver(broadcastReceiver);
+        } catch (Exception e) {
+            Log.d(TAG, "can't unregister receiver");
+        }
+        try {
+            handler.removeCallbacks(runnable);
+        } catch (Exception e) {
+            Log.d(TAG, "can't remove callbacks");
+        }
+        saveState();
+    }
+
 
 }

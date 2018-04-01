@@ -34,7 +34,7 @@ import static com.example.bartek.followyou.MainActivity.NAME_DATABASE;
 
 public class DetailsInfoActivity extends Fragment {
     public final static String TAG = "DetailsInfoActivity";
-    private static final double radius_of_earth = 6378.1;
+    public static final double radius_of_earth = 6378.1;
     private TextView textViewStartTime, textViewEndTime, textViewTime, textViewMaxSpeed, textViewAvgSpeed, textViewDistance;
     private LineChart lineChart;
     private int wayID;
@@ -124,13 +124,14 @@ public class DetailsInfoActivity extends Fragment {
 
         for(int i=0; i<locListSize; i++){
             spped = locList.get(i).getSpeed();
+            spped *= 3.6;
             avgSpeed += spped;
             entries.add(new BarEntry(i, (float) spped));
             if(spped > maxSpeed) maxSpeed = spped;
         }
         avgSpeed /= locListSize;
         textViewMaxSpeed.setText(String.format("%02f", maxSpeed) + " km/h");
-        textViewAvgSpeed.setText(String.format("%02f", avgSpeed) + " km/h");
+        textViewAvgSpeed.setText(String.format("%02f", avgSpeed ) + " km/h");
 
         LineDataSet dataset = new LineDataSet(entries, "km/h");
         dataset.setMode(LineDataSet.Mode.CUBIC_BEZIER);
@@ -161,8 +162,6 @@ public class DetailsInfoActivity extends Fragment {
         double a = Math.pow(Math.sin(dLat / 2), 2) + Math.pow(Math.sin(dLon / 2), 2) * Math.cos(lat1) * Math.cos(lat2);
         double c = 2 * Math.asin(Math.sqrt(a));
         return radius_of_earth * c;
-
-
     }
 
 }

@@ -30,7 +30,7 @@ import static com.example.bartek.followyou.MainActivity.SharedTag;
 public class LocationService extends Service {
     private static final String TAG = "BOOMBOOMTESTGPS";
     private LocationManager mLocationManager = null;
-    private static final int LOCATION_INTERVAL = 1000;
+    private static final int LOCATION_INTERVAL = 3000;
     private static final float LOCATION_DISTANCE = 10f;
     private WayDao wayDao;
     private LocDao locDao;
