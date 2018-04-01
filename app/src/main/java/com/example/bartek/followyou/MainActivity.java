@@ -32,8 +32,11 @@ import com.example.bartek.followyou.DetailActivities.DetailsActivity;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.PolylineOptions;
 
 import java.util.Calendar;
+import java.util.List;
 
 import static com.example.bartek.followyou.DetailActivities.DetailsInfoActivity.radius_of_earth;
 
@@ -51,6 +54,8 @@ public class MainActivity extends AppCompatActivity implements
     public static final String SharedRunnerIsStarted = "followIsStarted";
 
     private GoogleMap mMap;
+    private LatLng latLng;
+    private PolylineOptions rectOptions;
     private boolean permissionGranted, runnerisStarted = false;
     private Button bStartStop, bHistory;
     private TextView textViewTime, textViewDistance, textViewSpeed, textViewAvgSpeed;
@@ -85,7 +90,6 @@ public class MainActivity extends AppCompatActivity implements
         textViewDistance = (TextView) findViewById(R.id.textViewDistance);
         textViewAvgSpeed = (TextView) findViewById(R.id.textViewAvgSpeed);
 
-
         checkPermissions();
         database = Room.databaseBuilder(getApplicationContext(), AppDatabase.class, NAME_DATABASE)
                 .fallbackToDestructiveMigration().build();
@@ -97,10 +101,10 @@ public class MainActivity extends AppCompatActivity implements
 
         initializeIntents();
 
-
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.fragment);
         mapFragment.getMapAsync(this);
+        rectOptions = new PolylineOptions();
 
         broadcastReceiver = new BroadcastReceiver() {
             @Override
@@ -109,25 +113,26 @@ public class MainActivity extends AppCompatActivity implements
                 new AsyncTask<Void, Void, Void>() {
                     @Override
                     protected Void doInBackground(Void... voids) {
-                        spped =  locDao.getLastLoc().getSpeed();
+                        spped = locDao.getLastLoc().getSpeed();
                         spped *= 3.6;
                         lat2 = locDao.getLastLoc().getLatitude();
                         lon2 = locDao.getLastLoc().getLongitude();
-                        if(lat1 != 0){
+                        if (lat1 != 0) {
                             distance += haversine(lat1, lon1, lat2, lon2);
                         }
                         lat1 = lat2;
                         lon1 = lon2;
                         difftime = locDao.getLastLoc().getTime() - locDao.getFirstLocById(wayID).getTime();
-                        avgspeed = ((distance * 1000) / (difftime/1000)) * 3.6;
+                        avgspeed = ((distance * 1000) / (difftime / 1000)) * 3.6;
                         return null;
                     }
 
                     @Override
                     protected void onPostExecute(Void aVoid) {
-                        textViewSpeed.setText(String.format("%.2f", spped ) + " km/h");
+                        textViewSpeed.setText(String.format("%.2f", spped) + " km/h");
                         textViewDistance.setText(String.format("%.2f", distance) + " km");
                         textViewAvgSpeed.setText(String.format("%.2f", avgspeed) + " km/h");
+                        drawRoute(lat2, lon2);
                     }
                 }.execute();
             }
@@ -190,6 +195,7 @@ public class MainActivity extends AppCompatActivity implements
             protected void onPreExecute() {
                 runnerisStarted = true;
                 bStartStop.setText("Stop");
+                rectOptions = new PolylineOptions();
             }
 
             @Override
@@ -213,6 +219,10 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     private void stopFollow() {
+        difftime = 0;
+        distance = 0;
+        lat1 = 0;
+        lon1 = 0;
         bStartStop.setText("Start");
         runnerisStarted = false;
         mMap.clear();
@@ -241,6 +251,7 @@ public class MainActivity extends AppCompatActivity implements
 
             @Override
             protected void onPostExecute(Way way) {
+
                 detailsIntent.putExtra(DetailsIntentTag, wayID);
                 startActivity(detailsIntent);
             }
@@ -249,19 +260,32 @@ public class MainActivity extends AppCompatActivity implements
 
     private void continueFollow() {
         bStartStop.setText("Stop");
-        startService(locationService);
-        registerReceiver(broadcastReceiver, intentFilter);
-        new AsyncTask<Void, Void, Void>() {
+        rectOptions = new PolylineOptions();
+
+        new AsyncTask<Void, Void, List<Loc>>() {
             @Override
-            protected Void doInBackground(Void... voids) {
+            protected List<Loc> doInBackground(Void... voids) {
                 way = wayDao.getLastWay();
                 wayID = way.getId();
                 startTime = locDao.getFirstLocById(wayID).getTime();
-                return null;
+                lat1 = locDao.getLastLoc().getLatitude();
+                lon1 = locDao.getLastLoc().getLongitude();
+                return locDao.getLocsForWayID(wayID);
             }
 
             @Override
-            protected void onPostExecute(Void aVoid) {
+            protected void onPostExecute(List<Loc> locs) {
+                distance = 0;
+                for (int i = 0; i < locs.size() - 1; i++) {
+                    distance += haversine(locs.get(i).getLatitude(), locs.get(i).getLongitude(), locs.get(i + 1).getLatitude(), locs.get(i + 1).getLongitude());
+                }
+
+
+                Log.e(TAG, "onPostExecute: distance" + distance);
+                for (int i = 0; i < locs.size(); i++)
+                    drawRoute(locs.get(i).getLatitude(), locs.get(i).getLongitude());
+                startService(locationService);
+                registerReceiver(broadcastReceiver, intentFilter);
                 handler.postDelayed(runnable, 1000);
             }
         }.execute();
@@ -298,6 +322,12 @@ public class MainActivity extends AppCompatActivity implements
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) return true;
         return false;
+    }
+
+    private void drawRoute(double latitude, double longitude) {
+        latLng = new LatLng(latitude, longitude);
+        rectOptions.add(latLng);
+        mMap.addPolyline(rectOptions);
     }
 
     private void buildAlertMessageNoGps() {

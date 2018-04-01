@@ -30,7 +30,7 @@ import static com.example.bartek.followyou.MainActivity.SharedTag;
 public class LocationService extends Service {
     private static final String TAG = "BOOMBOOMTESTGPS";
     private LocationManager mLocationManager = null;
-    private static final int LOCATION_INTERVAL = 3000;
+    private static final int LOCATION_INTERVAL = 1500;
     private static final float LOCATION_DISTANCE = 10f;
     private WayDao wayDao;
     private LocDao locDao;
@@ -181,6 +181,8 @@ public class LocationService extends Service {
     public void onDestroy()
     {
         Log.e(TAG, "onDestroy");
+        editor.putBoolean(SharedRunnerIsStarted, false);
+        editor.commit();
         super.onDestroy();
         if (mLocationManager != null) {
             for (int i = 0; i < mLocationListeners.length; i++) {
@@ -191,8 +193,6 @@ public class LocationService extends Service {
                 }
             }
         }
-        editor.putBoolean(SharedRunnerIsStarted, false);
-        editor.commit();
     }
 
 }
