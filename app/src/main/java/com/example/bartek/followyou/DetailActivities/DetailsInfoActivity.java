@@ -100,9 +100,7 @@ public class DetailsInfoActivity extends Fragment {
         calendar.setTimeInMillis(startTime);
         SimpleDateFormat format = new SimpleDateFormat("hh:mm, EEEE, d MMMM, yyyy");
         textViewStartTime.setText(format.format(calendar.getTime()));
-
         calendar.setTimeInMillis(endTime);
-        textViewStartTime.setText(format.format(calendar.getTime()));
         textViewEndTime.setText(format.format(calendar.getTime()));
 
         int seconds = (int) ((diffTime) / 1000);

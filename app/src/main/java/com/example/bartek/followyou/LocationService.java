@@ -1,5 +1,8 @@
 package com.example.bartek.followyou;
 
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.arch.persistence.room.Room;
 import android.content.Context;
@@ -12,6 +15,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
 import com.example.bartek.followyou.Database.AppDatabase;
@@ -40,6 +44,8 @@ public class LocationService extends Service {
     private Intent intent;
     private SharedPreferences sharedPreferences;
     private SharedPreferences.Editor editor;
+    private NotificationCompat.Builder nofificationBuilder;
+    private NotificationManager notificationManager;
 
     private class LocationListener implements android.location.LocationListener
     {
@@ -121,6 +127,7 @@ public class LocationService extends Service {
     public void onCreate()
     {
         Log.e(TAG, "onCreate");
+        buildNotification();
         sharedPreferences = getSharedPreferences(SharedTag, Context.MODE_PRIVATE);
         editor = sharedPreferences.edit();
         intent = new Intent().setAction(MainActivity.Filter);
@@ -183,7 +190,7 @@ public class LocationService extends Service {
         Log.e(TAG, "onDestroy");
         editor.putBoolean(SharedRunnerIsStarted, false);
         editor.commit();
-        super.onDestroy();
+        notificationManager.cancel(1);
         if (mLocationManager != null) {
             for (int i = 0; i < mLocationListeners.length; i++) {
                 try {
@@ -193,6 +200,24 @@ public class LocationService extends Service {
                 }
             }
         }
+    }
+
+    private void buildNotification(){
+        nofificationBuilder = new NotificationCompat.Builder(this, "CHANNEL_ID");
+        nofificationBuilder.setAutoCancel(true)
+                .setDefaults(Notification.DEFAULT_ALL)
+                .setTicker(String.valueOf(R.string.app_name))
+                .setWhen(System.currentTimeMillis())
+                .setSmallIcon(R.drawable.ic_launcher_background)
+                .setContentTitle(String.valueOf(R.string.app_name))
+                .setContentText("Your tracker is running")
+                .setOngoing(true);
+
+        Intent mapsActivityIntent = new Intent(this, MainActivity.class);
+        PendingIntent contentIntent = PendingIntent.getActivity(this, 0, mapsActivityIntent, 0);
+        nofificationBuilder.setContentIntent(contentIntent);
+        notificationManager = (NotificationManager) getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
+        notificationManager.notify(1, nofificationBuilder.build());
     }
 
 }
