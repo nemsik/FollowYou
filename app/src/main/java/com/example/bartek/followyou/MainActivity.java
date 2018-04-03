@@ -176,6 +176,8 @@ public class MainActivity extends AppCompatActivity implements
         locationService = new Intent(this, LocationService.class);
         //historyIntent = new Intent(this, HistoryActivity.class);
         detailsIntent = new Intent(this, DetailsActivity.class);
+        detailsIntent.putExtra(DetailsIntentTag, 62);
+        startActivity(detailsIntent);
     }
 
     private class bStartStopClick implements View.OnClickListener {
@@ -267,9 +269,17 @@ public class MainActivity extends AppCompatActivity implements
             protected List<Loc> doInBackground(Void... voids) {
                 way = wayDao.getLastWay();
                 wayID = way.getId();
-                startTime = locDao.getFirstLocById(wayID).getTime();
-                lat1 = locDao.getLastLoc().getLatitude();
-                lon1 = locDao.getLastLoc().getLongitude();
+                try {
+                    startTime = locDao.getFirstLocById(wayID).getTime();
+                    lat1 = locDao.getLastLoc().getLatitude();
+                    lon1 = locDao.getLastLoc().getLongitude();
+                } catch (Exception e) {
+                    startTime = Calendar.getInstance().getTimeInMillis();
+                    startService(locationService);
+                    registerReceiver(broadcastReceiver, intentFilter);
+                    handler.postDelayed(runnable, 1000);
+                    cancel(true);
+                }
                 return locDao.getLocsForWayID(wayID);
             }
 

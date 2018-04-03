@@ -34,8 +34,8 @@ import static com.example.bartek.followyou.MainActivity.SharedTag;
 public class LocationService extends Service {
     private static final String TAG = "BOOMBOOMTESTGPS";
     private LocationManager mLocationManager = null;
-    private static final int LOCATION_INTERVAL = 1500;
-    private static final float LOCATION_DISTANCE = 10f;
+    private static final int LOCATION_INTERVAL = 2000;
+    private static final float LOCATION_DISTANCE = 0f;
     private WayDao wayDao;
     private LocDao locDao;
     private Way way;

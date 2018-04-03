@@ -114,6 +114,7 @@ public class DetailsMapActivity extends Fragment {
 
     private void setGui() {
         int locListSize = locList.size();
+        if (locListSize < 10) return;
         rectOptions = new PolylineOptions();
         LatLngBounds.Builder builder = new LatLngBounds.Builder();
         for (int i = 0; i < locListSize; i++) {
