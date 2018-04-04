@@ -11,6 +11,7 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 
 import com.example.bartek.followyou.Database.AppDatabase;
+import com.example.bartek.followyou.Database.Loc;
 import com.example.bartek.followyou.Database.LocDao;
 import com.example.bartek.followyou.Database.Way;
 import com.example.bartek.followyou.Database.WayDao;
@@ -18,9 +19,11 @@ import com.example.bartek.followyou.DetailActivities.DetailsActivity;
 import com.example.bartek.followyou.MainActivity;
 import com.example.bartek.followyou.R;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static com.example.bartek.followyou.DetailActivities.DetailsInfoActivity.radius_of_earth;
 import static com.example.bartek.followyou.MainActivity.NAME_DATABASE;
 
 public class HistoryActivity extends AppCompatActivity {
@@ -31,7 +34,11 @@ public class HistoryActivity extends AppCompatActivity {
     private HistoryAdapter historyAdapter;
     private Context context;
     private List<Way> wayList;
-    private List<Long> wayTime;
+    private List<Loc> locList;
+    private ArrayList<Long> wayStartTime = new ArrayList<>();
+    private ArrayList<Long> wayDiffTime = new ArrayList<>();
+    private ArrayList<Double> wayDistance = new ArrayList<>();
+    private double distance;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,23 +52,44 @@ public class HistoryActivity extends AppCompatActivity {
 
         listView = (ListView) findViewById(R.id.listView);
 
-        new AsyncTask<Void, Void, List<Way>>(){
+        new AsyncTask<Void, Void, Void>(){
             @Override
-            protected List<Way> doInBackground(Void... voids) {
-                return wayList = wayDao.getAll();
+            protected Void doInBackground(Void... voids) {
+                wayStartTime.clear();
+                wayDiffTime.clear();
+                wayList = wayDao.getAll();
+                Collections.reverse(wayList);
+                int wayId;
+                for(int i=0; i<wayList.size(); i++){
+                    try {
+                        distance = 0;
+                        wayId = wayList.get(i).getId();
+                        locList = locDao.getLocsForWayID(wayId);
+                        wayStartTime.add(locList.get(0).getTime());
+                        wayDiffTime.add(locList.get(locList.size()-1).getTime() - locList.get(0).getTime());
+                        for (int j=1; j<locList.size(); j++){
+                            distance += haversine(locList.get(j).getLatitude(), locList.get(j).getLongitude(), locList.get(j-1).getLatitude(), locList.get(j-1).getLongitude());
+                        }
+                        wayDistance.add(distance);
+                    }catch (Exception e){
+                        wayStartTime.add(0l);
+                        wayDiffTime.add(0l);
+                        wayDistance.add(0d);
+                    }
+                }
+                return null;
             }
 
             @Override
-            protected void onPostExecute(List<Way> ways) {
-                super.onPostExecute(ways);
-                Collections.reverse(wayList);
-                setList(wayList);
+            protected void onPostExecute(Void aVoid) {
+                super.onPostExecute(aVoid);
+                setList(wayList, wayStartTime, wayDiffTime, wayDistance);
             }
         }.execute();
     }
 
-    private void setList(final List<Way> ways){
-        historyAdapter = new HistoryAdapter(context, R.layout.history_adapter, ways);
+    private void setList(final List<Way> ways, List<Long> wayStartTime, List<Long> wayDiffTime, List<Double> wayDistance){
+        historyAdapter = new HistoryAdapter(context, R.layout.history_adapter, ways, wayStartTime, wayDiffTime, wayDistance);
         listView.setAdapter(historyAdapter);
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -71,5 +99,16 @@ public class HistoryActivity extends AppCompatActivity {
                 startActivity(detailsActivity);
             }
         });
+    }
+
+    private double haversine(double lat1, double lon1, double lat2, double lon2) {
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLon = Math.toRadians(lon2 - lon1);
+        lat1 = Math.toRadians(lat1);
+        lat2 = Math.toRadians(lat2);
+
+        double a = Math.pow(Math.sin(dLat / 2), 2) + Math.pow(Math.sin(dLon / 2), 2) * Math.cos(lat1) * Math.cos(lat2);
+        double c = 2 * Math.asin(Math.sqrt(a));
+        return radius_of_earth * c;
     }
 }

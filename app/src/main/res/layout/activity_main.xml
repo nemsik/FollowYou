@@ -7,6 +7,13 @@
     android:orientation="vertical"
     tools:context="com.example.bartek.followyou.MainActivity">
 
+    <android.support.design.widget.BottomNavigationView
+        android:id="@+id/navigation"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="?android:attr/windowBackground"
+        app:menu="@menu/navigation" />
+
     <android.support.constraint.ConstraintLayout
         android:id="@+id/constraintLayout"
         android:layout_width="match_parent"
@@ -119,7 +126,7 @@
         android:id="@+id/fragment"
         android:name="com.google.android.gms.maps.SupportMapFragment"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:layout_marginTop="8dp" >
 
         <Button
@@ -139,8 +146,6 @@
             android:text="History"
             android:padding="10dp"
             android:layout_marginBottom="20dp"/>
-
     </fragment>
-
 
 </android.support.v7.widget.LinearLayoutCompat>

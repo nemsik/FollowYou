@@ -15,10 +15,13 @@ import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.support.annotation.NonNull;
+import android.support.design.widget.BottomNavigationView;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -77,6 +80,27 @@ public class MainActivity extends AppCompatActivity implements
     private long startTime, difftime;
     private double spped, avgspeed, distance, lastLat, lat, lastLon, lon;
 
+    private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
+            = new BottomNavigationView.OnNavigationItemSelectedListener() {
+
+        @Override
+        public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+            switch (item.getItemId()) {
+                case R.id.navigation_home:
+                    //bHistory.setText(R.string.title_home);
+                    return true;
+                case R.id.navigation_history:
+                    //bHistory.setText(R.string.title_dashboard);
+                    startActivity(historyIntent);
+                    return true;
+                case R.id.navigation_settings:
+                    //bHistory.setText(R.string.title_notifications);
+                    return true;
+            }
+            return false;
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -91,6 +115,9 @@ public class MainActivity extends AppCompatActivity implements
         textViewTime = (TextView) findViewById(R.id.textViewTime);
         textViewDistance = (TextView) findViewById(R.id.textViewDistance);
         textViewAvgSpeed = (TextView) findViewById(R.id.textViewAvgSpeed);
+
+        BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation);
+        navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
 
         checkPermissions();
         database = Room.databaseBuilder(getApplicationContext(), AppDatabase.class, NAME_DATABASE)

@@ -1,4 +1,8 @@
 <resources>
     <string name="app_name">Follow You</string>
     <string name="title_activity_maps">Map</string>
+    <string name="title_activity_main2">Main2Activity</string>
+    <string name="title_home">Map</string>
+    <string name="title_dashboard">History</string>
+    <string name="title_notifications">Settings</string>
 </resources>
