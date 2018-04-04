@@ -29,6 +29,7 @@ import com.example.bartek.followyou.Database.LocDao;
 import com.example.bartek.followyou.Database.Way;
 import com.example.bartek.followyou.Database.WayDao;
 import com.example.bartek.followyou.DetailActivities.DetailsActivity;
+import com.example.bartek.followyou.History.HistoryActivity;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
@@ -74,7 +75,7 @@ public class MainActivity extends AppCompatActivity implements
     private SharedPreferences.Editor editor;
     private Handler handler = new Handler();
     private long startTime, difftime;
-    private double spped, avgspeed, distance, lat1, lat2, lon1, lon2;
+    private double spped, avgspeed, distance, lastLat, lat, lastLon, lon;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -85,6 +86,7 @@ public class MainActivity extends AppCompatActivity implements
         bStartStop = (Button) findViewById(R.id.buttonStartStop);
         bStartStop.setOnClickListener(new bStartStopClick());
         bHistory = (Button) findViewById(R.id.buttonHistory);
+        bHistory.setOnClickListener(new bHistoryClick());
         textViewSpeed = (TextView) findViewById(R.id.textViewSpeed);
         textViewTime = (TextView) findViewById(R.id.textViewTime);
         textViewDistance = (TextView) findViewById(R.id.textViewDistance);
@@ -115,13 +117,13 @@ public class MainActivity extends AppCompatActivity implements
                     protected Void doInBackground(Void... voids) {
                         spped = locDao.getLastLoc().getSpeed();
                         spped *= 3.6;
-                        lat2 = locDao.getLastLoc().getLatitude();
-                        lon2 = locDao.getLastLoc().getLongitude();
-                        if (lat1 != 0) {
-                            distance += haversine(lat1, lon1, lat2, lon2);
+                        lat = locDao.getLastLoc().getLatitude();
+                        lon = locDao.getLastLoc().getLongitude();
+                        if (lastLat != 0) {
+                            distance += haversine(lastLat, lastLat, lat, lon);
                         }
-                        lat1 = lat2;
-                        lon1 = lon2;
+                        lastLat = lat;
+                        lastLon = lon;
                         difftime = locDao.getLastLoc().getTime() - locDao.getFirstLocById(wayID).getTime();
                         avgspeed = ((distance * 1000) / (difftime / 1000)) * 3.6;
                         return null;
@@ -132,7 +134,7 @@ public class MainActivity extends AppCompatActivity implements
                         textViewSpeed.setText(String.format("%.2f", spped) + " km/h");
                         textViewDistance.setText(String.format("%.2f", distance) + " km");
                         textViewAvgSpeed.setText(String.format("%.2f", avgspeed) + " km/h");
-                        drawRoute(lat2, lon2);
+                        drawRoute(lat, lon);
                     }
                 }.execute();
             }
@@ -174,10 +176,8 @@ public class MainActivity extends AppCompatActivity implements
 
     private void initializeIntents() {
         locationService = new Intent(this, LocationService.class);
-        //historyIntent = new Intent(this, HistoryActivity.class);
+        historyIntent = new Intent(this, HistoryActivity.class);
         detailsIntent = new Intent(this, DetailsActivity.class);
-        detailsIntent.putExtra(DetailsIntentTag, 62);
-        startActivity(detailsIntent);
     }
 
     private class bStartStopClick implements View.OnClickListener {
@@ -186,7 +186,17 @@ public class MainActivity extends AppCompatActivity implements
             if (!runnerisStarted) {
                 if (!checkisGPSenabled()) buildAlertMessageNoGps();
                 else startFollow();
-            } else stopFollow();
+            } else{
+                stopFollow();
+                clearData();
+            }
+        }
+    }
+
+    private class bHistoryClick implements View.OnClickListener{
+        @Override
+        public void onClick(View view) {
+            startActivity(historyIntent);
         }
     }
 
@@ -223,8 +233,8 @@ public class MainActivity extends AppCompatActivity implements
     private void stopFollow() {
         difftime = 0;
         distance = 0;
-        lat1 = 0;
-        lon1 = 0;
+        lastLat = 0;
+        lastLon = 0;
         bStartStop.setText("Start");
         runnerisStarted = false;
         mMap.clear();
@@ -271,8 +281,8 @@ public class MainActivity extends AppCompatActivity implements
                 wayID = way.getId();
                 try {
                     startTime = locDao.getFirstLocById(wayID).getTime();
-                    lat1 = locDao.getLastLoc().getLatitude();
-                    lon1 = locDao.getLastLoc().getLongitude();
+                    lat = locDao.getLastLoc().getLatitude();
+                    lon = locDao.getLastLoc().getLongitude();
                 } catch (Exception e) {
                     startTime = Calendar.getInstance().getTimeInMillis();
                     startService(locationService);
@@ -284,19 +294,29 @@ public class MainActivity extends AppCompatActivity implements
             }
 
             @Override
-            protected void onPostExecute(List<Loc> locs) {
-                distance = 0;
-                for (int i = 0; i < locs.size() - 1; i++) {
-                    distance += haversine(locs.get(i).getLatitude(), locs.get(i).getLongitude(), locs.get(i + 1).getLatitude(), locs.get(i + 1).getLongitude());
-                }
+            protected void onPostExecute(final List<Loc> locs) {
 
+                new AsyncTask<List<Loc>, Void, Void>(){
+                    @Override
+                    protected Void doInBackground(List<Loc>[] lists) {
+                        distance = 0;
+                        for (int i = 0; i < locs.size() - 1; i++) {
+                            distance += haversine(locs.get(i).getLatitude(), locs.get(i).getLongitude(), locs.get(i + 1).getLatitude(), locs.get(i + 1).getLongitude());
+                        }
+                        Log.e(TAG, "onPostExecute: distance" + distance);
+                        return null;
+                    }
 
-                Log.e(TAG, "onPostExecute: distance" + distance);
-                for (int i = 0; i < locs.size(); i++)
-                    drawRoute(locs.get(i).getLatitude(), locs.get(i).getLongitude());
-                startService(locationService);
-                registerReceiver(broadcastReceiver, intentFilter);
-                handler.postDelayed(runnable, 1000);
+                    @Override
+                    protected void onPostExecute(Void aVoid) {
+                        super.onPostExecute(aVoid);
+                        for (int i = 0; i < locs.size(); i++)
+                            drawRoute(locs.get(i).getLatitude(), locs.get(i).getLongitude());
+                        startService(locationService);
+                        registerReceiver(broadcastReceiver, intentFilter);
+                        handler.postDelayed(runnable, 1000);
+                    }
+                }.execute(locs);
             }
         }.execute();
     }
@@ -316,6 +336,15 @@ public class MainActivity extends AppCompatActivity implements
             handler.postDelayed(this, 1000);
         }
     };
+
+    private void clearData(){
+        spped = avgspeed = difftime = 0;
+        distance = 0;
+        textViewTime.setText("00:00:00");
+        textViewDistance.setText("0.00 km");
+        textViewSpeed.setText("0.00 km/h");
+        textViewAvgSpeed.setText("0.00 km/h");
+    }
 
     private void saveState() {
         editor.putBoolean(SharedRunnerIsStarted, runnerisStarted);
