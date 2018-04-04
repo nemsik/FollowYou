@@ -2,6 +2,7 @@ package com.example.bartek.followyou;
 
 import android.Manifest;
 import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.arch.persistence.room.Room;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -79,6 +80,7 @@ public class MainActivity extends AppCompatActivity implements
     private Handler handler = new Handler();
     private long startTime, difftime;
     private double spped, avgspeed, distance, lastLat, lat, lastLon, lon;
+    private ProgressDialog progressDialog;
 
     private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
             = new BottomNavigationView.OnNavigationItemSelectedListener() {
@@ -91,6 +93,7 @@ public class MainActivity extends AppCompatActivity implements
                     return true;
                 case R.id.navigation_history:
                     //bHistory.setText(R.string.title_dashboard);
+                    finish();
                     startActivity(historyIntent);
                     return true;
                 case R.id.navigation_settings:
@@ -129,6 +132,7 @@ public class MainActivity extends AppCompatActivity implements
         editor = sharedPreferences.edit();
 
         initializeIntents();
+        progressDialog = new ProgressDialog(this);
 
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.fragment);
@@ -147,7 +151,7 @@ public class MainActivity extends AppCompatActivity implements
                         lat = locDao.getLastLoc().getLatitude();
                         lon = locDao.getLastLoc().getLongitude();
                         if (lastLat != 0) {
-                            distance += haversine(lastLat, lastLat, lat, lon);
+                            distance += haversine(lastLat, lastLon, lat, lon);
                         }
                         lastLat = lat;
                         lastLon = lon;
@@ -303,6 +307,13 @@ public class MainActivity extends AppCompatActivity implements
 
         new AsyncTask<Void, Void, List<Loc>>() {
             @Override
+            protected void onPreExecute() {
+                super.onPreExecute();
+                progressDialog.setMessage("Please wait.");
+                progressDialog.show();
+            }
+
+            @Override
             protected List<Loc> doInBackground(Void... voids) {
                 way = wayDao.getLastWay();
                 wayID = way.getId();
@@ -316,6 +327,7 @@ public class MainActivity extends AppCompatActivity implements
                     registerReceiver(broadcastReceiver, intentFilter);
                     handler.postDelayed(runnable, 1000);
                     cancel(true);
+                    progressDialog.dismiss();
                 }
                 return locDao.getLocsForWayID(wayID);
             }
@@ -342,6 +354,7 @@ public class MainActivity extends AppCompatActivity implements
                         startService(locationService);
                         registerReceiver(broadcastReceiver, intentFilter);
                         handler.postDelayed(runnable, 1000);
+                        progressDialog.dismiss();
                     }
                 }.execute(locs);
             }
@@ -467,5 +480,10 @@ public class MainActivity extends AppCompatActivity implements
         saveState();
     }
 
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        finishAffinity();
+    }
 
 }

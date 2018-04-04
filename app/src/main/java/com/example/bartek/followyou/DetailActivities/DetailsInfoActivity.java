@@ -1,5 +1,7 @@
 package com.example.bartek.followyou.DetailActivities;
 
+import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.arch.persistence.room.Room;
 import android.graphics.Color;
 import android.os.AsyncTask;
@@ -45,6 +47,7 @@ public class DetailsInfoActivity extends Fragment {
     ArrayList<Entry> entries = new ArrayList<>();
     double lat1, lon1, lat2, lon2, distance, spped, avgSpeed, maxSpeed;
     long diffTime;
+    private ProgressDialog progressDialog;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -64,6 +67,7 @@ public class DetailsInfoActivity extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.activity_details_info, container, false);
+        progressDialog = new ProgressDialog(getContext());
 
         textViewStartTime = (TextView) view.findViewById(R.id.textViewInfoStartTime);
         textViewEndTime = (TextView) view.findViewById(R.id.textViewInfoEndTime);
@@ -76,8 +80,16 @@ public class DetailsInfoActivity extends Fragment {
         database = Room.databaseBuilder(getContext(), AppDatabase.class, NAME_DATABASE)
                 .fallbackToDestructiveMigration().build();
         locDao = database.locDao();
+        progressDialog = new ProgressDialog(getContext());
 
         new AsyncTask<Void, Void, List<Loc>>() {
+            @Override
+            protected void onPreExecute() {
+                super.onPreExecute();
+                progressDialog.setMessage("Please wait.");
+                progressDialog.show();
+            }
+
             @Override
             protected List<Loc> doInBackground(Void... voids) {
                 return locDao.getLocsForWayID(wayID);
@@ -94,7 +106,10 @@ public class DetailsInfoActivity extends Fragment {
 
     private void setGui() {
         int locListSize = locList.size();
-        if (locListSize < 10) return;
+        if (locListSize < 10) {
+            progressDialog.dismiss();
+            return;
+        }
         long startTime = locList.get(0).getTime();
         long endTime = locList.get(locListSize - 1).getTime();
         diffTime = endTime - startTime;
@@ -161,6 +176,7 @@ public class DetailsInfoActivity extends Fragment {
         lineChart.setData(data);
         lineChart.setScaleYEnabled(false);
         lineChart.notifyDataSetChanged();
+        progressDialog.dismiss();
     }
 
     private double haversine(double lat1, double lon1, double lat2, double lon2) {

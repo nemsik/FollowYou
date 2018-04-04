@@ -1,26 +1,29 @@
 package com.example.bartek.followyou.DetailActivities;
 
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 
+import com.example.bartek.followyou.History.HistoryActivity;
+import com.example.bartek.followyou.History.HistoryAdapter;
 import com.example.bartek.followyou.MainActivity;
 import com.example.bartek.followyou.R;
 
 public class DetailsActivity extends AppCompatActivity {
     private FragmentPagerAdapter fragmentPagerAdapter;
     private static int wayId;
-
-
+    private Intent historyIntent;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         wayId = getIntent().getIntExtra(MainActivity.DetailsIntentTag, 0);
         setContentView(R.layout.activity_details);
+        historyIntent = new Intent(this, HistoryActivity.class);
         ViewPager viewPager = (ViewPager) findViewById(R.id.vpPager);
         fragmentPagerAdapter = new detailsPagerAdapter(getSupportFragmentManager());
         viewPager.setAdapter(fragmentPagerAdapter);
@@ -75,5 +78,13 @@ public class DetailsActivity extends AppCompatActivity {
                 default: return "Info";
             }
         }
+    }
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        finish();
+        finishAffinity();
+        startActivity(historyIntent);
     }
 }

@@ -1,11 +1,17 @@
 package com.example.bartek.followyou.History;
 
+import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.arch.persistence.room.Room;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.AsyncTask;
+import android.support.annotation.NonNull;
+import android.support.design.widget.BottomNavigationView;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
@@ -39,6 +45,28 @@ public class HistoryActivity extends AppCompatActivity {
     private ArrayList<Long> wayDiffTime = new ArrayList<>();
     private ArrayList<Double> wayDistance = new ArrayList<>();
     private double distance;
+    private Intent mapsIntent;
+    private ProgressDialog progressDialog;
+
+
+    private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
+            = new BottomNavigationView.OnNavigationItemSelectedListener() {
+
+        @Override
+        public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+            switch (item.getItemId()) {
+                case R.id.navigation_home:
+                    finish();
+                    startActivity(mapsIntent);
+                    return true;
+                case R.id.navigation_history:
+                    return true;
+                case R.id.navigation_settings:
+                    return true;
+            }
+            return false;
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,9 +78,24 @@ public class HistoryActivity extends AppCompatActivity {
         wayDao = database.wayDao();
         locDao = database.locDao();
 
+        mapsIntent = new Intent(this, MainActivity.class);
+
+        BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation_history);
+        navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
+        navigation.setSelectedItemId(R.id.navigation_history);
+
         listView = (ListView) findViewById(R.id.listView);
 
+        progressDialog = new ProgressDialog(this);
+
         new AsyncTask<Void, Void, Void>(){
+            @Override
+            protected void onPreExecute() {
+                super.onPreExecute();
+                progressDialog.setMessage("Please wait.");
+                progressDialog.show();
+            }
+
             @Override
             protected Void doInBackground(Void... voids) {
                 wayStartTime.clear();
@@ -84,6 +127,7 @@ public class HistoryActivity extends AppCompatActivity {
             protected void onPostExecute(Void aVoid) {
                 super.onPostExecute(aVoid);
                 setList(wayList, wayStartTime, wayDiffTime, wayDistance);
+                progressDialog.dismiss();
             }
         }.execute();
     }
@@ -110,5 +154,12 @@ public class HistoryActivity extends AppCompatActivity {
         double a = Math.pow(Math.sin(dLat / 2), 2) + Math.pow(Math.sin(dLon / 2), 2) * Math.cos(lat1) * Math.cos(lat2);
         double c = 2 * Math.asin(Math.sqrt(a));
         return radius_of_earth * c;
+    }
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        finish();
+        startActivity(mapsIntent);
     }
 }
