@@ -48,16 +48,16 @@
 
     <ImageView
         android:id="@+id/historyImageView"
-        android:layout_width="100dp"
-        android:layout_height="100dp"
+        android:layout_width="70dp"
+        android:layout_height="70dp"
         android:layout_marginBottom="8dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
         android:visibility="visible"
+        android:src="@drawable/runner"
         app:layout_constraintBottom_toBottomOf="@+id/textView15"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/textView12"
-        app:srcCompat="@drawable/common_google_signin_btn_icon_dark_focused" />
+        app:layout_constraintTop_toTopOf="@+id/textView12"/>
 
     <TextView
         android:id="@+id/textView15"

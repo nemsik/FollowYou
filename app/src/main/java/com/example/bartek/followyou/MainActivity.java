@@ -25,6 +25,8 @@ import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.example.bartek.followyou.Database.AppDatabase;
@@ -66,6 +68,7 @@ public class MainActivity extends AppCompatActivity implements
     private boolean permissionGranted, runnerisStarted = false;
     private Button bStartStop;
     private TextView textViewTime, textViewDistance, textViewSpeed, textViewAvgSpeed;
+    private ImageView imageButton;
     private Context context;
     private AppDatabase database;
     private WayDao wayDao;
