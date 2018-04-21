@@ -34,6 +34,8 @@ import com.example.bartek.followyou.Database.Way;
 import com.example.bartek.followyou.Database.WayDao;
 import com.example.bartek.followyou.DetailActivities.DetailsActivity;
 import com.example.bartek.followyou.History.HistoryActivity;
+import com.google.android.gms.maps.CameraUpdate;
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
@@ -70,7 +72,6 @@ public class MainActivity extends AppCompatActivity implements
     private LocDao locDao;
     private Way way;
     private int wayID;
-    private Loc loc;
     private LocationManager locationManager;
     private Intent locationService, historyIntent, detailsIntent;
     private BroadcastReceiver broadcastReceiver;
@@ -132,7 +133,7 @@ public class MainActivity extends AppCompatActivity implements
         initializeIntents();
         progressDialog = new ProgressDialog(this);
 
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
+        final SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.fragment);
         mapFragment.getMapAsync(this);
         rectOptions = new PolylineOptions();
@@ -164,6 +165,7 @@ public class MainActivity extends AppCompatActivity implements
                         textViewDistance.setText(String.format("%.2f", distance) + " km");
                         textViewAvgSpeed.setText(String.format("%.2f", avgspeed) + " km/h");
                         drawRoute(lat, lon);
+                        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(lat, lon), 13));
                     }
                 }.execute();
             }
@@ -474,6 +476,7 @@ public class MainActivity extends AppCompatActivity implements
         } catch (Exception e) {
             Log.d(TAG, "can't remove callbacks");
         }
+        runnerisStarted = false;
         saveState();
     }
 

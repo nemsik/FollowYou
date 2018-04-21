@@ -69,7 +69,7 @@ public class HistoryAdapter extends ArrayAdapter<Way> {
         textViewDiffTime = (TextView) v.findViewById(R.id.historyTextViewDiffTime);
         textViewDistance = (TextView)v.findViewById(R.id.historyTextViewDistance);
         imageView = (ImageView) v.findViewById(R.id.historyImageView);
-        imageView.setImageResource(R.mipmap.ic_launcher);
+        imageView.setImageResource(R.drawable.bike);
 
         final Way way = getItem(position);
 
