@@ -35,6 +35,9 @@ public interface WayDao {
     @Update
     void update(Way user);
 
+    @Query("DELETE FROM way WHERE id = :wayId")
+    void deleteById(int wayId);
+
     @Query("SELECT * FROM way ORDER BY id DESC LIMIT 1")
     Way getLastWay();
 }

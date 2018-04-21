@@ -22,6 +22,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
@@ -99,9 +100,6 @@ public class MainActivity extends AppCompatActivity implements
                     //bHistory.setText(R.string.title_dashboard);
                     finish();
                     startActivity(historyIntent);
-                    return true;
-                case R.id.navigation_settings:
-                    //bHistory.setText(R.string.title_notifications);
                     return true;
             }
             return false;

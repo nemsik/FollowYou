@@ -61,8 +61,6 @@ public class HistoryActivity extends AppCompatActivity {
                     return true;
                 case R.id.navigation_history:
                     return true;
-                case R.id.navigation_settings:
-                    return true;
             }
             return false;
         }
@@ -132,7 +130,7 @@ public class HistoryActivity extends AppCompatActivity {
         }.execute();
     }
 
-    private void setList(final List<Way> ways, List<Long> wayStartTime, List<Long> wayDiffTime, List<Double> wayDistance){
+    private void setList(final List<Way> ways, final List<Long> wayStartTime, final List<Long> wayDiffTime, final List<Double> wayDistance){
         historyAdapter = new HistoryAdapter(context, R.layout.history_adapter, ways, wayStartTime, wayDiffTime, wayDistance);
         listView.setAdapter(historyAdapter);
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -141,6 +139,53 @@ public class HistoryActivity extends AppCompatActivity {
                 Intent detailsActivity = new Intent(context, DetailsActivity.class);
                 detailsActivity.putExtra(MainActivity.DetailsIntentTag, ways.get(i).getId());
                 startActivity(detailsActivity);
+            }
+        });
+
+        listView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+            @Override
+            public boolean onItemLongClick(AdapterView<?> adapterView, View view, final int pos, long l) {
+                AlertDialog.Builder builder = new AlertDialog.Builder(HistoryActivity.this, android.R.style.Theme_Material_Dialog_Alert);
+                builder.setTitle("Delete entry")
+                        .setMessage("Are you sure you want to delete this entry?")
+                        .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                // continue with delete
+                                new AsyncTask<Void, Void, Void>(){
+                                    @Override
+                                    protected void onPreExecute() {
+                                        super.onPreExecute();
+                                        progressDialog.show();
+                                    }
+
+                                    @Override
+                                    protected Void doInBackground(Void... voids) {
+                                        wayDao.deleteById(ways.get(pos).getId());
+                                        ways.remove(pos);
+                                        wayStartTime.remove(pos);
+                                        wayDiffTime.remove(pos);
+                                        wayDistance.remove(pos);
+                                        return null;
+                                    }
+
+                                    @Override
+                                    protected void onPostExecute(Void aVoid) {
+                                        super.onPostExecute(aVoid);
+                                        historyAdapter.notifyDataSetChanged();
+                                        progressDialog.dismiss();
+                                    }
+                                }.execute();
+
+                            }
+                        })
+                        .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                // do nothing
+                            }
+                        })
+                        .setIcon(android.R.drawable.ic_dialog_alert)
+                        .show();
+                return true;
             }
         });
     }
