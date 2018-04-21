@@ -11,6 +11,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.PorterDuff;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.AsyncTask;
@@ -20,7 +21,6 @@ import android.support.design.widget.BottomNavigationView;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
@@ -62,7 +62,7 @@ public class MainActivity extends AppCompatActivity implements
     private LatLng latLng;
     private PolylineOptions rectOptions;
     private boolean permissionGranted, runnerisStarted = false;
-    private Button bStartStop, bHistory;
+    private Button bStartStop;
     private TextView textViewTime, textViewDistance, textViewSpeed, textViewAvgSpeed;
     private Context context;
     private AppDatabase database;
@@ -112,8 +112,6 @@ public class MainActivity extends AppCompatActivity implements
 
         bStartStop = (Button) findViewById(R.id.buttonStartStop);
         bStartStop.setOnClickListener(new bStartStopClick());
-        bHistory = (Button) findViewById(R.id.buttonHistory);
-        bHistory.setOnClickListener(new bHistoryClick());
         textViewSpeed = (TextView) findViewById(R.id.textViewSpeed);
         textViewTime = (TextView) findViewById(R.id.textViewTime);
         textViewDistance = (TextView) findViewById(R.id.textViewDistance);
@@ -224,13 +222,6 @@ public class MainActivity extends AppCompatActivity implements
         }
     }
 
-    private class bHistoryClick implements View.OnClickListener{
-        @Override
-        public void onClick(View view) {
-            startActivity(historyIntent);
-        }
-    }
-
     private void startFollow() {
         if (!checkPermissions()) return;
         new AsyncTask<Void, Void, Void>() {
@@ -238,6 +229,7 @@ public class MainActivity extends AppCompatActivity implements
             protected void onPreExecute() {
                 runnerisStarted = true;
                 bStartStop.setText("Stop");
+                bStartStop.setBackgroundResource(R.drawable.stop_button);
                 rectOptions = new PolylineOptions();
             }
 
@@ -267,6 +259,7 @@ public class MainActivity extends AppCompatActivity implements
         lastLat = 0;
         lastLon = 0;
         bStartStop.setText("Start");
+        bStartStop.setBackgroundResource(R.drawable.start_button);
         runnerisStarted = false;
         mMap.clear();
         try {
@@ -303,6 +296,7 @@ public class MainActivity extends AppCompatActivity implements
 
     private void continueFollow() {
         bStartStop.setText("Stop");
+        bStartStop.setBackgroundResource(R.drawable.stop_button);
         rectOptions = new PolylineOptions();
 
         new AsyncTask<Void, Void, List<Loc>>() {
@@ -343,17 +337,20 @@ public class MainActivity extends AppCompatActivity implements
                             distance += haversine(locs.get(i).getLatitude(), locs.get(i).getLongitude(), locs.get(i + 1).getLatitude(), locs.get(i + 1).getLongitude());
                         }
                         Log.e(TAG, "onPostExecute: distance" + distance);
+                        for (int i = 0; i < locs.size(); i++){
+                            latLng = new LatLng(locs.get(i).getLatitude(), locs.get(i).getLongitude());
+                            rectOptions.add(latLng);
+                        }
+                        startService(locationService);
                         return null;
                     }
 
                     @Override
                     protected void onPostExecute(Void aVoid) {
                         super.onPostExecute(aVoid);
-                        for (int i = 0; i < locs.size(); i++)
-                            drawRoute(locs.get(i).getLatitude(), locs.get(i).getLongitude());
-                        startService(locationService);
                         registerReceiver(broadcastReceiver, intentFilter);
                         handler.postDelayed(runnable, 1000);
+                        mMap.addPolyline(rectOptions);
                         progressDialog.dismiss();
                     }
                 }.execute(locs);

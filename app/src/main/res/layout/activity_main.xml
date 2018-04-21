@@ -51,13 +51,15 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"
+            android:layout_marginEnd="8dp"
             android:layout_marginStart="8dp"
             android:layout_marginTop="8dp"
             android:text="0,00"
             android:textSize="18sp"
             android:textStyle="bold"
             app:layout_constraintBottom_toBottomOf="@+id/textViewSpeed"
-            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="@+id/textView6"
+            app:layout_constraintStart_toStartOf="@+id/textView6"
             app:layout_constraintTop_toBottomOf="@+id/textView2" />
 
         <TextView
@@ -79,12 +81,14 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"
             android:layout_marginEnd="8dp"
+            android:layout_marginStart="8dp"
             android:text="0,00"
             android:textAllCaps="false"
             android:textSize="18sp"
             android:textStyle="bold"
             app:layout_constraintBottom_toBottomOf="@+id/textViewSpeed"
-            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintEnd_toEndOf="@+id/textView8"
+            app:layout_constraintStart_toStartOf="@+id/textView8"
             app:layout_constraintTop_toTopOf="@+id/textViewSpeed" />
 
         <TextView
@@ -94,8 +98,7 @@
             android:layout_marginStart="8dp"
             android:layout_marginTop="8dp"
             android:text="Dystans(km)"
-            app:layout_constraintEnd_toEndOf="@+id/textViewDistance"
-            app:layout_constraintStart_toStartOf="@+id/textViewDistance"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/textViewSpeed" />
 
         <TextView
@@ -112,11 +115,10 @@
             android:id="@+id/textView8"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="16dp"
+            android:layout_marginEnd="8dp"
             android:layout_marginTop="8dp"
             android:text="Śr. prędkość"
-            app:layout_constraintEnd_toEndOf="@+id/textViewAvgSpeed"
-            app:layout_constraintStart_toStartOf="@+id/textViewAvgSpeed"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/textViewSpeed" />
 
 
@@ -136,15 +138,7 @@
             android:layout_gravity="center|bottom"
             android:text="Start"
             android:padding="10dp"
-            android:layout_marginBottom="20dp"/>
-
-        <Button
-            android:id="@+id/buttonHistory"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="right|bottom"
-            android:text="History"
-            android:padding="10dp"
+            android:background="@drawable/start_button"
             android:layout_marginBottom="20dp"/>
     </fragment>
 
