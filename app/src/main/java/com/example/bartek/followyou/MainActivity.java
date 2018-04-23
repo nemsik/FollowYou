@@ -11,7 +11,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.graphics.PorterDuff;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.AsyncTask;
@@ -22,11 +21,9 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -37,7 +34,6 @@ import com.example.bartek.followyou.Database.Way;
 import com.example.bartek.followyou.Database.WayDao;
 import com.example.bartek.followyou.DetailActivities.DetailsActivity;
 import com.example.bartek.followyou.History.HistoryActivity;
-import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -60,13 +56,13 @@ public class MainActivity extends AppCompatActivity implements
     public static String NAME_DATABASE = "FollowYou";
     public static final String Filter = "GpsIntentFilter";
     public static final String DetailsIntentTag = "WayId";
-    public static final String SharedTag = "SharedPreferencesRunner";
-    public static final String SharedRunnerIsStarted = "followIsStarted";
+    public static final String SharedTag = "SharedPreferencesFollowMe";
+    public static final String SharedFollowMeIsStarted = "followIsStarted";
 
     private GoogleMap mMap;
     private LatLng latLng;
     private PolylineOptions rectOptions;
-    private boolean permissionGranted, runnerisStarted = false;
+    private boolean permissionGranted, followMeisStarted = false;
     private Button bStartStop;
     private TextView textViewTime, textViewDistance, textViewSpeed, textViewAvgSpeed;
     private ImageView imageButton;
@@ -215,7 +211,7 @@ public class MainActivity extends AppCompatActivity implements
     private class bStartStopClick implements View.OnClickListener {
         @Override
         public void onClick(View view) {
-            if (!runnerisStarted) {
+            if (!followMeisStarted) {
                 if (!checkisGPSenabled()) buildAlertMessageNoGps();
                 else startFollow();
             } else{
@@ -230,7 +226,7 @@ public class MainActivity extends AppCompatActivity implements
         new AsyncTask<Void, Void, Void>() {
             @Override
             protected void onPreExecute() {
-                runnerisStarted = true;
+                followMeisStarted = true;
                 bStartStop.setText("Stop");
                 bStartStop.setBackgroundResource(R.drawable.stop_button);
                 rectOptions = new PolylineOptions();
@@ -263,7 +259,7 @@ public class MainActivity extends AppCompatActivity implements
         lastLon = 0;
         bStartStop.setText("Start");
         bStartStop.setBackgroundResource(R.drawable.start_button);
-        runnerisStarted = false;
+        followMeisStarted = false;
         mMap.clear();
         try {
             unregisterReceiver(broadcastReceiver);
@@ -387,14 +383,14 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     private void saveState() {
-        editor.putBoolean(SharedRunnerIsStarted, runnerisStarted);
+        editor.putBoolean(SharedFollowMeIsStarted, followMeisStarted);
         editor.commit();
     }
 
     private void loadState() {
-        runnerisStarted = sharedPreferences.getBoolean(SharedRunnerIsStarted, false);
-        Log.d(TAG, "loadState: " + runnerisStarted);
-        if (runnerisStarted) continueFollow();
+        followMeisStarted = sharedPreferences.getBoolean(SharedFollowMeIsStarted, false);
+        Log.d(TAG, "loadState: " + followMeisStarted);
+        if (followMeisStarted) continueFollow();
     }
 
     private boolean checkisGPSenabled() {
@@ -477,7 +473,7 @@ public class MainActivity extends AppCompatActivity implements
         } catch (Exception e) {
             Log.d(TAG, "can't remove callbacks");
         }
-        runnerisStarted = false;
+        followMeisStarted = false;
         saveState();
     }
 

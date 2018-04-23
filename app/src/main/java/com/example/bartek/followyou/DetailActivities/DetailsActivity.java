@@ -83,7 +83,6 @@ public class DetailsActivity extends AppCompatActivity {
     @Override
     public void onBackPressed() {
         super.onBackPressed();
-        finish();
         finishAffinity();
         startActivity(historyIntent);
     }

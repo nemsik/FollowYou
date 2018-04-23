@@ -9,7 +9,6 @@ import android.arch.persistence.room.TypeConverters;
  */
 
 @Database(entities = {Loc.class, Way.class}, version = 3)
-@TypeConverters({Converters.class})
 
 public abstract class AppDatabase extends RoomDatabase {
     public abstract LocDao locDao();

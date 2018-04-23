@@ -9,12 +9,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.location.Location;
-import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
@@ -24,7 +22,7 @@ import com.example.bartek.followyou.Database.LocDao;
 import com.example.bartek.followyou.Database.Way;
 import com.example.bartek.followyou.Database.WayDao;
 
-import static com.example.bartek.followyou.MainActivity.SharedRunnerIsStarted;
+import static com.example.bartek.followyou.MainActivity.SharedFollowMeIsStarted;
 import static com.example.bartek.followyou.MainActivity.SharedTag;
 
 /**
@@ -32,7 +30,7 @@ import static com.example.bartek.followyou.MainActivity.SharedTag;
  */
 
 public class LocationService extends Service {
-    private static final String TAG = "BOOMBOOMTESTGPS";
+    private static final String TAG = "LocationServiceTAG";
     private LocationManager mLocationManager = null;
     private static final int LOCATION_INTERVAL = 2000;
     private static final float LOCATION_DISTANCE = 0f;
@@ -188,7 +186,7 @@ public class LocationService extends Service {
     public void onDestroy()
     {
         Log.e(TAG, "onDestroy");
-        editor.putBoolean(SharedRunnerIsStarted, false);
+        editor.putBoolean(SharedFollowMeIsStarted, false);
         editor.commit();
         notificationManager.cancel(1);
         if (mLocationManager != null) {
