@@ -6,6 +6,7 @@ import android.arch.persistence.room.Room;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
@@ -31,6 +32,8 @@ import java.util.List;
 
 import static com.example.bartek.followyou.DetailActivities.DetailsInfoActivity.radius_of_earth;
 import static com.example.bartek.followyou.MainActivity.NAME_DATABASE;
+import static com.example.bartek.followyou.MainActivity.SharedFollowMeIsStarted;
+import static com.example.bartek.followyou.MainActivity.SharedTag;
 
 public class HistoryActivity extends AppCompatActivity {
     private ListView listView;
@@ -47,6 +50,7 @@ public class HistoryActivity extends AppCompatActivity {
     private double distance;
     private Intent mapsIntent;
     private ProgressDialog progressDialog;
+    private SharedPreferences sharedPreferences;
 
 
     private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
@@ -75,6 +79,7 @@ public class HistoryActivity extends AppCompatActivity {
                 .fallbackToDestructiveMigration().build();
         wayDao = database.wayDao();
         locDao = database.locDao();
+        sharedPreferences = getSharedPreferences(SharedTag, Context.MODE_PRIVATE);
 
         mapsIntent = new Intent(this, MainActivity.class);
 
@@ -150,6 +155,20 @@ public class HistoryActivity extends AppCompatActivity {
                         .setMessage("Are you sure you want to delete this entry?")
                         .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int which) {
+                                if(sharedPreferences.getBoolean(SharedFollowMeIsStarted, false)){
+                                    AlertDialog.Builder builder1 = new AlertDialog.Builder(HistoryActivity.this, android.R.style.Theme_Material_Dialog_Alert);
+                                    builder1.setTitle("Can't remove entry!")
+                                            .setMessage("FollowYou is running, first you must click stop button")
+                                            .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                                                @Override
+                                                public void onClick(DialogInterface dialogInterface, int i) {
+
+                                                }
+                                            })
+                                            .setIcon(android.R.drawable.ic_dialog_alert)
+                                            .show();
+                                    return;
+                                }
                                 // continue with delete
                                 new AsyncTask<Void, Void, Void>(){
                                     @Override

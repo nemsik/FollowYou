@@ -167,6 +167,7 @@ public class MainActivity extends AppCompatActivity implements
                 }.execute();
             }
         };
+        Log.d(TAG, "onCreate: ");
     }
 
     private boolean checkPermissions() {
@@ -473,7 +474,7 @@ public class MainActivity extends AppCompatActivity implements
         } catch (Exception e) {
             Log.d(TAG, "can't remove callbacks");
         }
-        followMeisStarted = false;
+        //followMeisStarted = false;
         saveState();
     }
 
