@@ -141,19 +141,17 @@ public class DetailsInfoActivity extends Fragment {
         for (int i = 0; i < locListSize; i++) {
             spped = locList.get(i).getSpeed();
             spped *= 3.6;
-            avgSpeed += spped;
             if (i == 0) {
-                entries.add(new BarEntry(0, (float) spped));
                 diffTime = 0;
+                entries.add(new Entry(diffTime, (float) spped));
             } else {
                 diffTime += locList.get(i).getTime() - locList.get(i - 1).getTime();
                 Log.d(TAG, "setGui: " + diffTime);
-                entries.add(new BarEntry(diffTime / 1000, (float) spped));
+                entries.add(new Entry(diffTime / 1000, (float) spped));
             }
-            //entries.add(new BarEntry(i, (float) spped));
             if (spped > maxSpeed) maxSpeed = spped;
         }
-        avgSpeed /= locListSize;
+        avgSpeed = ((distance*1000)/(diffTime/1000)) * 3.6;
         textViewMaxSpeed.setText(String.format("%02f", maxSpeed) + " km/h");
         textViewAvgSpeed.setText(String.format("%02f", avgSpeed) + " km/h");
 

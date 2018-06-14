@@ -1,6 +1,7 @@
 package com.example.bartek.followyou;
 
 import android.app.Notification;
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
@@ -43,7 +44,7 @@ public class LocationService extends Service {
     private SharedPreferences sharedPreferences;
     private SharedPreferences.Editor editor;
     private NotificationCompat.Builder nofificationBuilder;
-    private NotificationManager notificationManager;
+    private NotificationManager mNotificationManager;
 
     private class LocationListener implements android.location.LocationListener
     {
@@ -188,7 +189,7 @@ public class LocationService extends Service {
         Log.e(TAG, "onDestroy");
         editor.putBoolean(SharedFollowMeIsStarted, false);
         editor.commit();
-        notificationManager.cancel(1);
+        mNotificationManager.cancel(0);
         if (mLocationManager != null) {
             for (int i = 0; i < mLocationListeners.length; i++) {
                 try {
@@ -201,21 +202,30 @@ public class LocationService extends Service {
     }
 
     private void buildNotification(){
-        nofificationBuilder = new NotificationCompat.Builder(this, "CHANNEL_ID");
+        mNotificationManager =
+                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel("FollowMe",
+                    "FollowMeChanel",
+                    NotificationManager.IMPORTANCE_DEFAULT);
+            channel.setDescription("FollowMe notification");
+            mNotificationManager.createNotificationChannel(channel);
+        }
+
+        nofificationBuilder = new NotificationCompat.Builder(this, "FollowMe");
         nofificationBuilder.setAutoCancel(true)
                 .setDefaults(Notification.DEFAULT_ALL)
-                .setTicker(String.valueOf(R.string.app_name))
+                .setTicker("FollowYou")
                 .setWhen(System.currentTimeMillis())
                 .setSmallIcon(R.drawable.ic_launcher_background)
-                .setContentTitle(String.valueOf(R.string.app_name))
+                .setContentTitle("FollowYou")
                 .setContentText("Your tracker is running")
                 .setOngoing(true);
 
-        Intent mapsActivityIntent = new Intent(this, MainActivity.class);
-        PendingIntent contentIntent = PendingIntent.getActivity(this, 0, mapsActivityIntent, 0);
+        Intent mapsActivityIntent = new Intent(getApplicationContext(), MainActivity.class);
+        PendingIntent contentIntent = PendingIntent.getActivity(getApplicationContext(), 0, mapsActivityIntent, PendingIntent.FLAG_UPDATE_CURRENT);
         nofificationBuilder.setContentIntent(contentIntent);
-        notificationManager = (NotificationManager) getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
-        notificationManager.notify(1, nofificationBuilder.build());
+        mNotificationManager.notify(0, nofificationBuilder.build());
     }
 
 }

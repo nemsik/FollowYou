@@ -61,11 +61,10 @@ public class MainActivity extends AppCompatActivity implements
 
     private GoogleMap mMap;
     private LatLng latLng;
-    private PolylineOptions rectOptions;
+    private PolylineOptions pointOptions;
     private boolean permissionGranted, followMeisStarted = false;
     private Button bStartStop;
     private TextView textViewTime, textViewDistance, textViewSpeed, textViewAvgSpeed;
-    private ImageView imageButton;
     private Context context;
     private AppDatabase database;
     private WayDao wayDao;
@@ -133,7 +132,7 @@ public class MainActivity extends AppCompatActivity implements
         final SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.fragment);
         mapFragment.getMapAsync(this);
-        rectOptions = new PolylineOptions();
+        pointOptions = new PolylineOptions();
 
         broadcastReceiver = new BroadcastReceiver() {
             @Override
@@ -193,9 +192,10 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
-
         mMap = googleMap;
-        if (checkPermissions() == true) mMap.setMyLocationEnabled(true);
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                return;
+            }mMap.setMyLocationEnabled(true);
         mMap.setOnMapLoadedCallback(new GoogleMap.OnMapLoadedCallback() {
             @Override
             public void onMapLoaded() {
@@ -230,7 +230,7 @@ public class MainActivity extends AppCompatActivity implements
                 followMeisStarted = true;
                 bStartStop.setText("Stop");
                 bStartStop.setBackgroundResource(R.drawable.stop_button);
-                rectOptions = new PolylineOptions();
+                pointOptions = new PolylineOptions();
             }
 
             @Override
@@ -297,7 +297,7 @@ public class MainActivity extends AppCompatActivity implements
     private void continueFollow() {
         bStartStop.setText("Stop");
         bStartStop.setBackgroundResource(R.drawable.stop_button);
-        rectOptions = new PolylineOptions();
+        pointOptions = new PolylineOptions();
 
         new AsyncTask<Void, Void, List<Loc>>() {
             @Override
@@ -339,7 +339,7 @@ public class MainActivity extends AppCompatActivity implements
                         Log.e(TAG, "onPostExecute: distance" + distance);
                         for (int i = 0; i < locs.size(); i++){
                             latLng = new LatLng(locs.get(i).getLatitude(), locs.get(i).getLongitude());
-                            rectOptions.add(latLng);
+                            pointOptions.add(latLng);
                         }
                         startService(locationService);
                         return null;
@@ -350,7 +350,7 @@ public class MainActivity extends AppCompatActivity implements
                         super.onPostExecute(aVoid);
                         registerReceiver(broadcastReceiver, intentFilter);
                         handler.postDelayed(runnable, 1000);
-                        mMap.addPolyline(rectOptions);
+                        mMap.addPolyline(pointOptions);
                         progressDialog.dismiss();
                     }
                 }.execute(locs);
@@ -402,8 +402,8 @@ public class MainActivity extends AppCompatActivity implements
 
     private void drawRoute(double latitude, double longitude) {
         latLng = new LatLng(latitude, longitude);
-        rectOptions.add(latLng);
-        mMap.addPolyline(rectOptions);
+        pointOptions.add(latLng);
+        mMap.addPolyline(pointOptions);
     }
 
     private void buildAlertMessageNoGps() {
@@ -411,12 +411,12 @@ public class MainActivity extends AppCompatActivity implements
         builder.setMessage("Your GPS seems to be disabled, do you want to enable it?")
                 .setCancelable(false)
                 .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                    public void onClick(@SuppressWarnings("unused") final DialogInterface dialog, @SuppressWarnings("unused") final int id) {
+                    public void onClick(final DialogInterface dialog, final int id) {
                         startActivity(new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS));
                     }
                 })
                 .setNegativeButton("No", new DialogInterface.OnClickListener() {
-                    public void onClick(final DialogInterface dialog, @SuppressWarnings("unused") final int id) {
+                    public void onClick(final DialogInterface dialog, final int id) {
                         dialog.cancel();
                     }
                 });
@@ -481,7 +481,7 @@ public class MainActivity extends AppCompatActivity implements
     @Override
     public void onBackPressed() {
         super.onBackPressed();
-        finishAffinity();
+        finish();
     }
 
 }

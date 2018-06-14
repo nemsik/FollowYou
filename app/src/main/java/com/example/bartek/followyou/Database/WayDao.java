@@ -17,14 +17,8 @@ public interface WayDao {
     @Query("SELECT * FROM way")
     List<Way> getAll();
 
-//    @Query("SELECT * FROM way WHERE id IN (:wayIds)")
-//    List<Way> loadAllByIds(int[] wayIds);
-
     @Query("SELECT * FROM way WHERE id = :wayId")
     Way getById(int wayId);
-
-    @Insert
-    void insertAll(Way... ways);
 
     @Insert
     void insert(Way way);
@@ -33,7 +27,7 @@ public interface WayDao {
     void delete(Way way);
 
     @Update
-    void update(Way user);
+    void update(Way way);
 
     @Query("DELETE FROM way WHERE id = :wayId")
     void deleteById(int wayId);
